@@ -13,6 +13,7 @@ build_dirs:
 # Compile the D simulator manually
 $(SIMULATOR_BINARY):
 	dmd -w -g $(SIMULATOR_DIR)/src/sim_server.d $(SIMULATOR_DIR)/src/timer_event.d -of$(SIMULATOR_BINARY)
+	cp $(SIMULATOR_DIR)/simulator.con build/
 
 # Build the Go application
 $(GO_BINARY): $(wildcard cmd/*.go pkg/**/*.go)
