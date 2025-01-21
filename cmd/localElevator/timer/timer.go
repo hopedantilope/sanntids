@@ -5,8 +5,8 @@ import (
 )
 
 var (
-	timerrEndTime float64
-	timerActive   bool
+	timerEndTime float64
+	timerActive  bool
 )
 
 func getWallTime() float64 {
@@ -14,14 +14,15 @@ func getWallTime() float64 {
 	return float64(now.Unix()) + float64(now.Nanosecond())*1e-9
 }
 
-func Timerstart(duration float64) {
+func TimerStart(duration float64) {
 	timerEndTime = getWallTime() + duration
-	timerActive = 1
-}
-func TimerStop() {
-	timerAcive = 0
+	timerActive = true
 }
 
-func TimerTimedOut() {
+func TimerStop() {
+	timerActive = false
+}
+
+func TimerTimedOut() bool {
 	return timerActive && getWallTime() > timerEndTime
 }

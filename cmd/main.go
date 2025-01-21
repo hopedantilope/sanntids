@@ -1,9 +1,8 @@
 package main
-
+import (
+	"sanntids/cmd/localElevator/fsm"
+)
 func main() {
 
-	if getFloor() == -1 {
-		fsm_onInitBetweenFloors()
-	}
-
+	fsm.ElevatorInit()
 }
