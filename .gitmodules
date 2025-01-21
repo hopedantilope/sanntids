@@ -4,3 +4,6 @@
 [submodule "lib/driver-go"]
 	path = lib/driver-go
 	url = https://github.com/TTK4145/driver-go.git
+[submodule "lib/network-go"]
+	path = lib/network-go
+	url = https://github.com/TTK4145/Network-go.git
