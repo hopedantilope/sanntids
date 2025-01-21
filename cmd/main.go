@@ -1,7 +1,8 @@
 package main
 
-import "fmt"
-
+import "Driver-go/elevio"
 func main() {
-    fmt.Println("Hello, world!")
+    numFloors := 4
+
+    elevio.Init("localhost:15657", numFloors)
 }
