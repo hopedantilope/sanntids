@@ -111,10 +111,10 @@ func RequestsShouldStop(e elevator.Elevator) bool {
 // Decide if a request should be cleared immediately based on variant
 func Requests_shouldClearImmediately(e elevator.Elevator, btnFloor int, btnType elevio.ButtonType) bool {
     switch e.Config.ClearRequestVariant {
-    case elevator.CV_All:
+    case config.CV_All:
         return e.Floor == btnFloor
 
-    case elevator.CV_InDirn:
+    case config.CV_InDirn:
         return e.Floor == btnFloor &&
             ((e.MotorDirection == elevio.MD_Up && btnType == elevio.BT_HallUp) ||
                 (e.MotorDirection == elevio.MD_Down && btnType == elevio.BT_HallDown) ||
@@ -129,12 +129,12 @@ func Requests_shouldClearImmediately(e elevator.Elevator, btnFloor int, btnType 
 
 func Requests_clearAtCurrentFloor(e elevator.Elevator) elevator.Elevator {
     switch e.Config.ClearRequestVariant {
-    case elevator.CV_All:
+    case config.CV_All:
         for btn := 0; btn < int(elevator.N_BUTTONS); btn++ {
             e.Requests[e.Floor][btn] = false
         }
 
-    case elevator.CV_InDirn:
+    case config.CV_InDirn:
         e.Requests[e.Floor][elevator.BT_Cab] = false
 
         switch e.MotorDirection {

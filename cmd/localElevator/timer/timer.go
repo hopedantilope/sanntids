@@ -4,25 +4,34 @@ import (
 	"time"
 )
 
-var (
-	timerEndTime float64
-	timerActive  bool
-)
-
-func getWallTime() float64 {
-	now := time.Now()
-	return float64(now.Unix()) + float64(now.Nanosecond())*1e-9
-}
+var timeoutChan = make(chan bool)
+var doorTimer *time.Timer
 
 func TimerStart(duration float64) {
-	timerEndTime = getWallTime() + duration
-	timerActive = true
+	if doorTimer != nil {
+		doorTimer.Stop()
+	}
+	doorTimer = time.AfterFunc(time.Duration(duration)*time.Second, func() {
+		timeoutChan <- true
+	})
+}
+
+func TimerReset(duration float64) {
+	if doorTimer == nil {
+		TimerStart(duration)
+		return
+	}
+	if !doorTimer.Reset(time.Duration(duration) * time.Second) {
+		TimerStart(duration)
+	}
 }
 
 func TimerStop() {
-	timerActive = false
+	if doorTimer != nil {
+		doorTimer.Stop()
+	}
 }
 
-func TimerTimedOut() bool {
-	return timerActive && getWallTime() > timerEndTime
+func TimeoutChan() <-chan bool {
+	return timeoutChan
 }
