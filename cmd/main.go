@@ -28,7 +28,6 @@ func main() {
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
 
-	stateTx := make(chan fsm.ElevatorState)
 	stateRequestTx := make(chan chan fsm.ElevatorState)
 
 	go fsm.Fsm(drv_buttons, drv_floors, drv_obstr, drv_stop, stateRequestTx)
@@ -46,22 +45,12 @@ func main() {
 
 	for {
 		select {
-		case state := <-stateTx:
-			fmt.Printf("Received state from FSM (event): Floor %d, Direction %v, Behaviour %v\n", state.Floor, state.MotorDirection, state.Behaviour)
-
-			stateWithID := broadcastState.ElevatorStateWithID{
-				ElevatorID:   id,
-				ElevatorState: state,
-			}
-			broadcastStateChan <- stateWithID
-
 		case <-broadcastTicker.C: 
 			requestChan := make(chan fsm.ElevatorState) 
 			stateRequestTx <- requestChan           
 			currentState := <-requestChan           
 
 			fmt.Printf("Timed broadcast: Floor %d, Direction %v, Behaviour %v\n", currentState.Floor, currentState.MotorDirection, currentState.Behaviour)
-
 
 			stateWithID := broadcastState.ElevatorStateWithID{
 				ElevatorID:   id,
