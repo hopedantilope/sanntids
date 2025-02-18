@@ -125,36 +125,54 @@ func onObstruction(el *elevator.Elevator, obstruction bool) {
 
 
 func Fsm(
-	drv_buttons chan elevio.ButtonEvent,
-	drv_floors chan int,
-	drv_obstr chan bool,
-	drv_stop chan bool) {
+    drv_buttons chan elevio.ButtonEvent,
+    drv_floors chan int,
+    drv_obstr chan bool,
+    drv_stop chan bool,
+	stateRequestTx <-chan chan ElevatorState,
+) {
 
-	e := elevator.ElevatorInit()
-	
-	setAllLights(e)
-	elevio.SetFloorIndicator(0)
-	elevio.SetDoorOpenLamp(false)
-	moveToFirstFloor(drv_floors)
+    e := elevator.ElevatorInit()
 
-	// Event handling loop
-	for {
-		select {
-		case btn := <-drv_buttons:
-			fmt.Println("Button pressed")
-			onRequestButtonPress(&e, btn.Floor, btn.Button)
+    setAllLights(e)
+    elevio.SetFloorIndicator(0)
+    elevio.SetDoorOpenLamp(false)
+    moveToFirstFloor(drv_floors)
 
-		case floor := <-drv_floors:
-			fmt.Printf("Arrived at floor: %v \n", floor)
-			onFloorArrival(&e, floor)
 
-		case <-timer.TimeoutChan():
-			fmt.Println("Timeout")
-			onDoorTimeout(&e)
-		case obstruction := <-drv_obstr:
-			onObstruction(&e, obstruction)
-		case <-drv_stop:
-			//Optional
-		}
-	}
+    for {
+        select {
+        case btn := <-drv_buttons:
+            fmt.Println("Button pressed")
+            onRequestButtonPress(&e, btn.Floor, btn.Button)
+
+        case floor := <-drv_floors:
+            fmt.Printf("Arrived at floor: %v \n", floor)
+            onFloorArrival(&e, floor)
+
+        case <-timer.TimeoutChan():
+            fmt.Println("Timeout")
+            onDoorTimeout(&e)
+
+        case obstruction := <-drv_obstr:
+            onObstruction(&e, obstruction)
+
+        case <-drv_stop:
+            //Optional - if stop button causes a state change
+
+		case requestChan := <-stateRequestTx: 
+			requestChan <- ElevatorState{
+				Floor:          e.Floor,
+				MotorDirection: e.MotorDirection,
+				Behaviour:      e.Behaviour,
+			}
+        }
+    }
+}
+
+// ElevatorState struct (no change)
+type ElevatorState struct {
+    Floor          int
+    MotorDirection elevio.MotorDirection
+    Behaviour      elevator.ElevatorBehaviour
 }
