@@ -7,6 +7,7 @@ import (
 	"sanntids/cmd/localElevator/fsm"
 	"sanntids/cmd/network/broadcastState"
 	"time"
+	"Network-go/network/localip"
 )
 
 func main() {
@@ -14,7 +15,7 @@ func main() {
 	numFloors := 4
 
 	elevio.Init("localhost:15657", numFloors)
-	id := "1"
+	id, _ := localip.LocalIP()
 	fmt.Println("Elevator started with id: ", id)
 
 	drv_buttons := make(chan elevio.ButtonEvent)
