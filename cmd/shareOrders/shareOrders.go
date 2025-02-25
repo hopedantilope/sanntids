@@ -14,14 +14,14 @@ type OrderStatus int
 
 const (
 	Unknown OrderStatus = iota - 1
-    New                 
+    Assigned                 
     Confirmed                   
     Completed                   
 )
 
 type HallOrder struct {
     DelegatedID		string    
-	orderID			int 
+	time			time.Time 
     Status			OrderStatus 
     Floor			int
 	Dir 			elevio.MotorDirection
@@ -39,11 +39,9 @@ func HallOrderManager(netUpdates <-chan HallOrder, localRequest <-chan elevio.Bu
         case request := <-localRequest:
 			onLocalRequest()
         case update := <-netUpdates:
-			if shouldAcceptNetworkUpdate(){
-				onNetworkUpdate()
-			}
+			onNetworkUpdate()
 		case completedRequest := <- completedReqest:
-			onCompletedRequest()
+			onCompletedRequest(com)
         }
     }
 }
@@ -75,8 +73,9 @@ func onLocalRequest(orders *OrderMap, request requestType, netOut chan <- HallOr
 
 // handleStateTransition can trigger actions based on state changes.
 func onNetworkUpdate(update HallOrder) {
+	shouldAcceptNetworkUpdate()
     switch update.Status {
-    case New:
+    case Assigned:
 		fmt.Printf("New order at: Floor %d, Direction %v\n", update.Floor, update.Dir)
     case Confirmed:
         // Set all OrderLights
