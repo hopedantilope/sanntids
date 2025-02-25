@@ -126,6 +126,89 @@ func Requests_shouldClearImmediately(e elevator.Elevator, btnFloor int, btnType 
     }
 }
 
+func Requests_clearAtCurrentFloor(e elevator.Elevator, onClearedRequest func(elevio.ButtonType, int)) elevator.Elevator {
+    switch e.Config.ClearRequestVariant {
+    case config.CV_All:
+        for btn := 0; btn < int(elevator.N_BUTTONS); btn++ {
+            if e.Requests[e.Floor][btn] {
+                e.request[e.Floor] [btn] = false
+                if onClearedRequest != nil {
+                    onClearedRequest(elevio.ButtonType(btn), e.Floor)
+                }
+            }
+            
+        }
+
+    case config.CV_InDirn:
+        if e.Requests[e.Floor][elevator.BT_Cab] {
+            e.Requests[e.Floor][elevator.BT_Cab] = false
+            if onClearedRequest != nil {
+                onClearedRequest(elevator.BT_Cab, e.Floor)
+            }
+        }
+
+        switch e.MotorDirection {
+        case elevio.MD_Up:
+            if e.Requests[e.Floor][elevator.BT_HallUp] {
+                e.Requests[e.Floor][elevator.BT_HallUp] = false
+                if onClearedRequest != nil {
+                    onClearedRequest(elevator.BT_HallUp, e.Floor)
+                }
+            }
+            
+
+            if !requests_above(e) && !e.Requests[e.Floor][elevator.BT_HallUp] {
+                if e.Requests[e.Floor][elevator.BT_HallDown] {
+                    e.Requests[e.Floor][elevator.BT_HallDown] = false
+                    if onClearedRequest != nil {
+                        onClearedRequest(elevator.BT_HallDown, e.Floor)
+                    }
+                }
+            }
+
+        case elevio.MD_Down:
+            if e.Requests[e.Floor][elevator.BT_HallDown] {
+                e.Requests[e.Floor][elevator.BT_HallDown] = false
+                if onClearedRequest != nil {
+                    onClearedRequest(elevator.BT_HallDown, e.Floor)
+                }
+
+            }
+            if !requests_below(e) && !e.Requests[e.Floor][elevator.BT_HallDown] {
+                if e.Requests[e.Floor][elevator.BT_HallUp] {
+                    e.Requests[e.Floor][elevator.BT_HallUp] = false
+                    if onClearedRequest != nil {
+                        onClearedRequest(elevator.BT_HallUp, e.Floor)
+                    }
+                } 
+            }
+
+        case elevio.MD_Stop:
+            fallthrough
+        default:
+            if e.Requests[e.Floor][elevator.BT_HallUp] {
+                e.Requests[e.Floor][elevator.BT_HallUp] = false 
+                if onClearedRequest != nil {
+                    onClearedRequest(elevator.BT_HallUp, e.Floor)
+                }
+            }
+            if e.Requests[e.Floor][elevator.BT_HallDown] {
+                e.Requests[e.Floor][elevator.BT_HallDown] = false 
+                if onClearedRequest != nil {
+                    onClearedRequest(elevator.BT_HallDown, e.Floor)
+                }
+            }
+        }
+    }
+    return e
+}
+
+
+
+
+
+
+
 
 func Requests_clearAtCurrentFloor(e elevator.Elevator) elevator.Elevator {
     switch e.Config.ClearRequestVariant {

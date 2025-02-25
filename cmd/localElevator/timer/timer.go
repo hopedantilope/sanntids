@@ -2,10 +2,17 @@ package timer
 
 import (
 	"time"
+	"sanntids/cmd/localElevator/elevator"
+	"sanntids/cmd/localElevator/requests"
 )
+
 
 var timeoutChan = make(chan bool)
 var doorTimer *time.Timer
+const (
+	TRAVEL_TIME = 10
+	DOOR_OPEN_TIME = 3
+)
 
 func TimerStart(duration float64) {
 	if doorTimer != nil {
@@ -35,3 +42,5 @@ func TimerStop() {
 func TimeoutChan() <-chan bool {
 	return timeoutChan
 }
+
+
