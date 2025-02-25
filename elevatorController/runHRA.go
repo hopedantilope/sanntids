@@ -21,7 +21,7 @@ type HRAElevState struct {
 
 type HRAInput struct {
     HallRequests    [elevator.N_FLOORS][2]bool                   `json:"hallRequests"`
-    States          map[string]HRAElevState     `json:"states"`
+    States          map[string]HRAElevState                      `json:"states"`
 }
 
 func transformToElevatorState(e elevator.Elevator) HRAElevState{
@@ -37,7 +37,7 @@ func transformToElevatorState(e elevator.Elevator) HRAElevState{
 	return elevastate
 }
 
-func runHRA(hallRequests [elevator.N_FLOORS][2]bool, elevators map[string]elevator.Elevator)(map[string][elevator.N_FLOORS][2]bool){
+func runHRA(hallRequests [elevator.N_FLOORS][2]bool, elevators map[string]elevator.Elevator) (map[string][elevator.N_FLOORS][2]bool){
 
     hraExecutable := ""
     switch runtime.GOOS {
@@ -60,6 +60,7 @@ func runHRA(hallRequests [elevator.N_FLOORS][2]bool, elevators map[string]elevat
     }
     
     output := make(map[string][elevator.N_FLOORS][2]bool)
+
     err = json.Unmarshal(ret, &output)
     if err != nil {
         fmt.Println("json.Unmarshal error: ", err)
@@ -71,5 +72,5 @@ func runHRA(hallRequests [elevator.N_FLOORS][2]bool, elevators map[string]elevat
         fmt.Printf("%6v :  %+v\n", k, v)
     }
 
-    return output, nil
+    return output
 }
