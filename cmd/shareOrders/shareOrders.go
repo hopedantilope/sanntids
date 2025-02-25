@@ -27,7 +27,7 @@ type HallOrder struct {
 	Dir 			elevio.MotorDirection
 }
 
-type OrderMap map[string]map[int]OrderStatus
+type OrderMap map[string]HallOrder
 
 func HallOrderManager(netUpdates <-chan HallOrder, localRequest <-chan elevio.ButtonEvent, netOut chan <- HallOrder) {
     // orders: a mapping of OrderID to OrderState
