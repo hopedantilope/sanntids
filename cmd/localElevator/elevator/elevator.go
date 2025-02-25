@@ -25,6 +25,20 @@ func eb_toString(elevatorbehavior ElevatorBehavior) string {
     }
 }
 
+
+func md_toString(motordirection elevio.MotorDirection) string {
+    switch eb {
+    case MD_Up:
+        return "Up"
+    case MD_Down:
+        return "Down"
+    case MD_Stop:
+        return "stop"
+    default:
+        return "unknown"
+    }
+}
+
 type Button int
 const (
     BT_HallUp   Button = iota
