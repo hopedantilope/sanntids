@@ -37,6 +37,8 @@ func transformToElevatorState(e elevator.Elevator) HRAElevState{
 	return elevastate
 }
 
+//hallrequests: [N_floors][2]bool (opp ned)
+
 func runHRA(hallRequests [elevator.N_FLOORS][2]bool, elevators map[string]elevator.Elevator) (map[string][elevator.N_FLOORS][2]bool){
 
     hraExecutable := ""
@@ -46,13 +48,20 @@ func runHRA(hallRequests [elevator.N_FLOORS][2]bool, elevators map[string]elevat
         default:        panic("OS not supported")
     }
 
+    inputMap =: make (map[string]HRAElevState)
+    for id, elevator := range elevators {
+        inputMap[id] = transformToElevatorState(elevator)
+    }
+
+    input := HRAInput{HallRequests: hallRequests, States: inputMap}
+
     jsonBytes, err := json.Marshal(input)
     if err != nil {
         fmt.Println("json.Marshal error: ", err)
         return
     }
-    
-    ret, err := exec.Command("../hall_request_assigner/"+hraExecutable, "-i", string(jsonBytes)).CombinedOutput()
+    path,_:=os.Getwd();
+    ret, err := exec.Command(path + "elevatorController/cost_fns/hall_request_assigner/"+hraExecutable, "-i", string(jsonBytes)).CombinedOutput()
     if err != nil {
         fmt.Println("exec.Command error: ", err)
         fmt.Println(string(ret))
@@ -60,7 +69,6 @@ func runHRA(hallRequests [elevator.N_FLOORS][2]bool, elevators map[string]elevat
     }
     
     output := make(map[string][elevator.N_FLOORS][2]bool)
-
     err = json.Unmarshal(ret, &output)
     if err != nil {
         fmt.Println("json.Unmarshal error: ", err)
