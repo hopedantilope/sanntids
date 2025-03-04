@@ -12,7 +12,7 @@ const (
     EB_Moving
 )
 
-func eb_toString(eb ElevatorBehavior) string {
+func eb_toString(eb ElevatorBehaviour) string {
     switch eb {
     case EB_Idle:
         return "idle"

@@ -2,8 +2,6 @@ package timer
 
 import (
 	"time"
-	"sanntids/cmd/localElevator/elevator"
-	"sanntids/cmd/localElevator/requests"
 )
 
 
