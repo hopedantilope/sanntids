@@ -12,7 +12,7 @@ const (
     EB_Moving
 )
 
-func eb_toString(elevatorbehavior ElevatorBehavior) string {
+func eb_toString(eb ElevatorBehavior) string {
     switch eb {
     case EB_Idle:
         return "idle"
@@ -25,14 +25,13 @@ func eb_toString(elevatorbehavior ElevatorBehavior) string {
     }
 }
 
-
-func md_toString(motordirection elevio.MotorDirection) string {
-    switch eb {
-    case MD_Up:
+func md_toString(md elevio.MotorDirection) string {
+    switch md {
+    case elevio.MD_Up:
         return "Up"
-    case MD_Down:
+    case elevio.MD_Down:
         return "Down"
-    case MD_Stop:
+    case elevio.MD_Stop:
         return "stop"
     default:
         return "unknown"

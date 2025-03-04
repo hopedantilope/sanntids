@@ -203,20 +203,12 @@ func Requests_clearAtCurrentFloor(e elevator.Elevator, onClearedRequest func(ele
     return e
 }
 
-
-
-
-
-
-
-
 func Requests_clearAtCurrentFloor(e elevator.Elevator) elevator.Elevator {
     switch e.Config.ClearRequestVariant {
     case config.CV_All:
         for btn := 0; btn < int(elevator.N_BUTTONS); btn++ {
             e.Requests[e.Floor][btn] = false
         }
-
     case config.CV_InDirn:
         e.Requests[e.Floor][elevator.BT_Cab] = false
 
