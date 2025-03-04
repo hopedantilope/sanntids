@@ -12,6 +12,32 @@ const (
     EB_Moving
 )
 
+func eb_toString(eb ElevatorBehaviour) string {
+    switch eb {
+    case EB_Idle:
+        return "idle"
+    case EB_DoorOpen:
+        return "door open"
+    case EB_Moving:
+        return "moving"
+    default:
+        return "unknown"
+    }
+}
+
+func md_toString(md elevio.MotorDirection) string {
+    switch md {
+    case elevio.MD_Up:
+        return "Up"
+    case elevio.MD_Down:
+        return "Down"
+    case elevio.MD_Stop:
+        return "stop"
+    default:
+        return "unknown"
+    }
+}
+
 type Button int
 const (
     BT_HallUp   Button = iota

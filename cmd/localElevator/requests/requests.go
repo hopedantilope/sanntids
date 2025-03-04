@@ -126,7 +126,6 @@ func Requests_shouldClearImmediately(e elevator.Elevator, btnFloor int, btnType 
     }
 }
 
-
 func Requests_clearAtCurrentFloor(e elevator.Elevator) elevator.Elevator {
     switch e.Config.ClearRequestVariant {
     case config.CV_All:
@@ -160,3 +159,4 @@ func Requests_clearAtCurrentFloor(e elevator.Elevator) elevator.Elevator {
     }
     return e
 }
+
