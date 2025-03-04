@@ -7,3 +7,6 @@
 [submodule "lib/network-go"]
 	path = lib/network-go
 	url = https://github.com/TTK4145/Network-go.git
+[submodule "lib/Project-resources"]
+	path = lib/Project-resources
+	url = https://github.com/TTK4145/Project-resources.git
