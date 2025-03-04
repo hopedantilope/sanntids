@@ -17,6 +17,7 @@ $(SIMULATOR_BINARY):
 	dmd -w -g $(SIMULATOR_DIR)/src/sim_server.d $(SIMULATOR_DIR)/src/timer_event.d -of$(SIMULATOR_BINARY)
 	cp $(SIMULATOR_DIR)/simulator.con build/
 
+# Compile the D cost func manually
 $(COST_FN_BINARY):
 	dmd -w -g $(COST_FN_DIR)/main.d \
 		$(COST_FN_DIR)/config.d \

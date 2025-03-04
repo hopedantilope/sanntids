@@ -76,7 +76,7 @@ func runHRA(hallRequests [config.N_FLOORS][2]bool, states map[string]HRAElevStat
     }
         
     fmt.Printf("output: \n")
-    for k, v := range output {
+    for key, value := range output {
         fmt.Printf("%6v :  %+v\n", k, v)
     }
 
