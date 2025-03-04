@@ -26,18 +26,19 @@ type HRAInput struct {
 
 func transformToElevatorState(e elevator.Elevator) HRAElevState{
 	var elevstate HRAElevState
-	elevastate.Behavior = elevator.eb_toString(e.Behaviour)
-	elevastate.Floor = e.Floor
-	elevastate.Direction = elevator.md_toString(e.MotorDirection)
+	elevstate.Behavior = elevator.eb_toString(e.Behaviour)
+	elevstate.Floor = e.Floor
+	elevstate.Direction = elevator.md_toString(e.MotorDirection)
 	var cab []bool
 	for i:= range e.Requests{
 		cab = append(cab, e.Requests[i][2])
 	}
-	elevastate.CabRequests = cab
-	return elevastate
+	elevstate.CabRequests = cab
+	return elevstate
 }
 
 //hallrequests: [N_floors][2]bool (opp ned)
+
 
 func runHRA(hallRequests [elevator.N_FLOORS][2]bool, elevators map[string]elevator.Elevator) (map[string][elevator.N_FLOORS][2]bool){
 
