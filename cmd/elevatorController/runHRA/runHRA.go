@@ -6,6 +6,7 @@ import "fmt"
 import "encoding/json"
 import "runtime"
 import "sanntids/cmd/localElevator/elevator"
+import "sanntids/cmd/localElevator/config"
 
 // Struct members must be public in order to be accessible by json.Marshal/.Unmarshal
 // This means they must start with a capital letter, so we need to use field renaming struct tags to make them camelCase
@@ -18,15 +19,15 @@ type HRAElevState struct {
 }
 
 type HRAInput struct {
-    HallRequests    [elevator.N_FLOORS][2]bool                   `json:"hallRequests"`
+    HallRequests    [config.N_FLOORS][2]bool                   `json:"hallRequests"`
     States          map[string]HRAElevState                      `json:"states"`
 }
 
 func transformToElevatorState(e elevator.Elevator) HRAElevState{
 	var elevstate HRAElevState
-	elevstate.Behavior = elevator.eb_toString(e.Behaviour)
+	elevstate.Behavior = elevator.Eb_toString(e.Behaviour)
 	elevstate.Floor = e.Floor
-	elevstate.Direction = elevator.md_toString(e.MotorDirection)
+	elevstate.Direction = elevator.Md_toString(e.MotorDirection)
 	var cab []bool
 	for i:= range e.Requests{
 		cab = append(cab, e.Requests[i][2])
@@ -38,7 +39,7 @@ func transformToElevatorState(e elevator.Elevator) HRAElevState{
 //hallrequests: [N_floors][2]bool (opp ned)
 
 
-func runHRA(hallRequests [elevator.N_FLOORS][2]bool, elevators map[string]elevator.Elevator) (map[string][elevator.N_FLOORS][2]bool){
+func runHRA(hallRequests [config.N_FLOORS][2]bool, elevators map[string]elevator.Elevator) (map[string][config.N_FLOORS][2]bool){
 
     hraExecutable := ""
     switch runtime.GOOS {
@@ -67,7 +68,7 @@ func runHRA(hallRequests [elevator.N_FLOORS][2]bool, elevators map[string]elevat
         return
     }
     
-    output := make(map[string][elevator.N_FLOORS][2]bool)
+    output := make(map[string][config.N_FLOORS][2]bool)
     err = json.Unmarshal(ret, &output)
     if err != nil {
         fmt.Println("json.Unmarshal error: ", err)
