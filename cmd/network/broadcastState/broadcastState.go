@@ -1,37 +1,37 @@
-// broadcastState.go
 package broadcastState
 
 import (
 	"Network-go/network/bcast"
 	"fmt"
 	"sanntids/cmd/localElevator/fsm"
+	"sanntids/cmd/shareOrders"
 )
 
-
-type ElevatorStateWithID struct {
-	ElevatorID   string
+// Combined structure for broadcasting both elevator state and hall orders
+type ElevatorDataWithID struct {
+	ElevatorID    string
 	ElevatorState fsm.ElevatorState
+	HallOrders    []shareOrders.HallOrder
 }
 
-
-func BroadcastState(stateChan <-chan ElevatorStateWithID, port int) {
-	fmt.Printf("Starting state broadcaster on port %d\n", port)
-	broadcastChan := make(chan ElevatorStateWithID)
+func BroadcastState(dataChan <-chan ElevatorDataWithID, port int) {
+	fmt.Printf("Starting data broadcaster on port %d\n", port)
+	broadcastChan := make(chan ElevatorDataWithID)
 
 	go bcast.Transmitter(port, broadcastChan)
 
-	for stateWithID := range stateChan {
-		broadcastChan <- stateWithID
+	for dataWithID := range dataChan {
+		broadcastChan <- dataWithID
 	}
 }
 
-func ReceiveState(stateChan chan<- ElevatorStateWithID, port int) {
-	fmt.Printf("Starting state receiver on port %d\n", port)
-	receiveChan := make(chan ElevatorStateWithID)
+func ReceiveState(dataChan chan<- ElevatorDataWithID, port int) {
+	fmt.Printf("Starting data receiver on port %d\n", port)
+	receiveChan := make(chan ElevatorDataWithID)
 
 	go bcast.Receiver(port, receiveChan)
 
-	for receivedStateWithID := range receiveChan {
-		stateChan <- receivedStateWithID
+	for receivedDataWithID := range receiveChan {
+		dataChan <- receivedDataWithID
 	}
 }

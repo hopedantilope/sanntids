@@ -1,17 +1,16 @@
-// main.go
 package main
 
 import (
 	"Driver-go/elevio"
 	"fmt"
 	"sanntids/cmd/localElevator/fsm"
+	"sanntids/cmd/shareOrders"
 	"sanntids/cmd/network/broadcastState"
 	"time"
 	"Network-go/network/localip"
 )
 
 func main() {
-
 	numFloors := 4
 
 	elevio.Init("localhost:15657", numFloors)
@@ -28,43 +27,78 @@ func main() {
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
 
+	// Channel for FSM state requests
 	stateRequestTx := make(chan chan fsm.ElevatorState)
+	
+	// Channels for hall order handling
+	hallOrderChan := make(chan elevio.ButtonEvent)
+	completedOrderChan := make(chan shareOrders.HallOrder)
+	
+	// Split the button events between FSM and hall order manager
+	buttonSplitter := make(chan elevio.ButtonEvent)
+	go func() {
+		for btn := range drv_buttons {
+			// Send to FSM
+			buttonSplitter <- btn
+			
+			// Also send hall orders to hall order manager
+			if btn.Button != elevio.BT_Cab {
+				hallOrderChan <- btn
+			}
+		}
+	}()
 
-	go fsm.Fsm(drv_buttons, drv_floors, drv_obstr, drv_stop, stateRequestTx)
+	// Start the FSM with the original parameters
+	go fsm.Fsm(buttonSplitter, drv_floors, drv_obstr, drv_stop, stateRequestTx)
 
+	// Setup network communication
 	broadcastPort := 30003
-	broadcastStateChan := make(chan broadcastState.ElevatorStateWithID)
-	receiveStateChan := make(chan broadcastState.ElevatorStateWithID)
+	broadcastDataChan := make(chan broadcastState.ElevatorDataWithID)
+	receiveDataChan := make(chan broadcastState.ElevatorDataWithID)
+	
+	// Internal channels for hall order manager
+	incomingOrdersChan := make(chan []shareOrders.HallOrder)
+	outgoingOrdersChan := make(chan []shareOrders.HallOrder)
+	
+	// Start hall order manager
+	go shareOrders.HallOrderManager(incomingOrdersChan, hallOrderChan, outgoingOrdersChan, completedOrderChan)
 
-	go broadcastState.BroadcastState(broadcastStateChan, broadcastPort)
-	go broadcastState.ReceiveState(receiveStateChan, broadcastPort)
+	// Start network communication
+	go broadcastState.BroadcastState(broadcastDataChan, broadcastPort)
+	go broadcastState.ReceiveState(receiveDataChan, broadcastPort)
 
-
-	broadcastTicker := time.NewTicker(1 * time.Second) 
+	// Setup periodic broadcasting
+	broadcastTicker := time.NewTicker(1 * time.Second)
 	defer broadcastTicker.Stop()
+
+	// Track local hall orders
+	var localHallOrders []shareOrders.HallOrder
 
 	for {
 		select {
-		case <-broadcastTicker.C: 
-			requestChan := make(chan fsm.ElevatorState) 
-			stateRequestTx <- requestChan           
-			currentState := <-requestChan           
-
-			fmt.Printf("Timed broadcast: Floor %d, Direction %v, Behaviour %v\n", currentState.Floor, currentState.MotorDirection, currentState.Behaviour)
-
-			stateWithID := broadcastState.ElevatorStateWithID{
-				ElevatorID:   id,
+		case <-broadcastTicker.C:
+			// Get current elevator state
+			requestChan := make(chan fsm.ElevatorState)
+			stateRequestTx <- requestChan
+			currentState := <-requestChan
+			
+			// Create combined data packet with state and orders
+			dataWithID := broadcastState.ElevatorDataWithID{
+				ElevatorID:    id,
 				ElevatorState: currentState,
+				HallOrders:    localHallOrders,
 			}
-			broadcastStateChan <- stateWithID
+			
+			// Broadcast
+			broadcastDataChan <- dataWithID
 
-		case receivedStateWithID := <-receiveStateChan:
-			fmt.Printf("Received broadcast state (ID: %s): Floor %d, Direction %v, Behaviour %v\n",
-				receivedStateWithID.ElevatorID, receivedStateWithID.ElevatorState.Floor, receivedStateWithID.ElevatorState.MotorDirection, receivedStateWithID.ElevatorState.Behaviour)
-
+		case receivedDataWithID := <-receiveDataChan:
+			if receivedDataWithID.ElevatorID != id {
+				incomingOrdersChan <- receivedDataWithID.HallOrders
+			}
+			
+		case updatedOrders := <-outgoingOrdersChan:
+			localHallOrders = updatedOrders
 		}
 	}
-
-	select {}
-
 }
