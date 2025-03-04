@@ -6,7 +6,7 @@ COST_FN_BINARY := build/hall_request_assigner
 GO_BINARY := build/main
 
 # Default target
-all: build_dirs $(SIMULATOR_BINARY) $(GO_BINARY) $(COST_FN_BINARY)
+all: clean build_dirs $(SIMULATOR_BINARY) $(GO_BINARY) $(COST_FN_BINARY)
 
 # Create build directories if they don't exist
 build_dirs:

@@ -7,7 +7,6 @@ import "encoding/json"
 import "runtime"
 import "sanntids/cmd/localElevator/elevator"
 import "sanntids/cmd/localElevator/config"
-import "os"
 
 // Struct members must be public in order to be accessible by json.Marshal/.Unmarshal
 // This means they must start with a capital letter, so we need to use field renaming struct tags to make them camelCase
@@ -40,7 +39,7 @@ func transformToElevatorState(e elevator.Elevator) HRAElevState{
 //hallrequests: [N_floors][2]bool (opp ned)
 
 
-func runHRA(hallRequests [config.N_FLOORS][2]bool, elevators map[string]elevator.Elevator) (map[string][config.N_FLOORS][2]bool){
+func runHRA(hallRequests [config.N_FLOORS][2]bool, states map[string]HRAElevState) (map[string][config.N_FLOORS][2]bool){
 
     hraExecutable := ""
     switch runtime.GOOS {
@@ -48,10 +47,10 @@ func runHRA(hallRequests [config.N_FLOORS][2]bool, elevators map[string]elevator
         case "windows": hraExecutable  = "hall_request_assigner.exe"
         default:        panic("OS not supported")
     }
-
+    fmt.Println(hraExecutable)
     inputMap := make (map[string]HRAElevState)
-    for id, elevator := range elevators {
-        inputMap[id] = transformToElevatorState(elevator)
+    for id, state := range states {
+        inputMap[id] = state
     }
 
     input := HRAInput{HallRequests: hallRequests, States: inputMap}
@@ -61,8 +60,8 @@ func runHRA(hallRequests [config.N_FLOORS][2]bool, elevators map[string]elevator
         fmt.Println("json.Marshal error: ", err)
         return nil
     }
-    path,_:=os.Getwd();
-    ret, err := exec.Command(path + "elevatorController/cost_fns/hall_request_assigner/"+hraExecutable, "-i", string(jsonBytes)).CombinedOutput()
+    //path,_:=os.Getwd();
+    ret, err := exec.Command("build/hall_request_assigner", "-i", string(jsonBytes)).CombinedOutput()
     if err != nil {
         fmt.Println("exec.Command error: ", err)
         fmt.Println(string(ret))
@@ -82,4 +81,26 @@ func runHRA(hallRequests [config.N_FLOORS][2]bool, elevators map[string]elevator
     }
 
     return output
+}
+
+func Test()map[string][config.N_FLOORS][2]bool{
+
+    hallRequests := [config.N_FLOORS][2]bool{{false, false}, {true, false}, {false, false}, {false, true}}
+
+    states := map[string]HRAElevState{
+        "one": HRAElevState{
+            Behavior:       "moving",
+            Floor:          2,
+            Direction:      "up",
+            CabRequests:    []bool{false, false, false, true},
+        },
+        "two": HRAElevState{
+            Behavior:       "idle",
+            Floor:          0,
+            Direction:      "stop",
+            CabRequests:    []bool{false, false, false, false},
+        },
+    }
+    answer := runHRA(hallRequests, states)
+    return answer
 }

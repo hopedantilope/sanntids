@@ -14,6 +14,7 @@ import (
 
 
 func main() {
+	runHRA.Test()
 	numFloors := 4
 
 	elevio.Init("localhost:15657", numFloors)
