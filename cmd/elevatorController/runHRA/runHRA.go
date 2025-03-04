@@ -5,9 +5,7 @@ import "os/exec"
 import "fmt"
 import "encoding/json"
 import "runtime"
-import "elevator"
-import "requests"
-import "Driver-go/elevio"
+import "sanntids/cmd/localElevator/elevator"
 
 // Struct members must be public in order to be accessible by json.Marshal/.Unmarshal
 // This means they must start with a capital letter, so we need to use field renaming struct tags to make them camelCase
@@ -49,7 +47,7 @@ func runHRA(hallRequests [elevator.N_FLOORS][2]bool, elevators map[string]elevat
         default:        panic("OS not supported")
     }
 
-    inputMap =: make (map[string]HRAElevState)
+    inputMap := make (map[string]HRAElevState)
     for id, elevator := range elevators {
         inputMap[id] = transformToElevatorState(elevator)
     }

@@ -6,6 +6,7 @@ import (
 	"sanntids/cmd/localElevator/fsm"
 	"sanntids/cmd/shareOrders"
 	"sanntids/cmd/network/broadcastState"
+	"sanntids/cmd/elevatorController/runHRA"
 	"time"
 	"Network-go/network/localip"
 )
