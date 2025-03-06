@@ -20,8 +20,7 @@ type HRAElevState struct {
 
 // Combined structure for broadcasting both elevator state and hall orders
 type ElevatorDataWithID struct {
-	ElevatorID    string
-	ElevatorState fsm.ElevatorState
+	ElevatorState map[string]HRAElevState
 	HallOrders    []localOrders.HallOrder
 }
 
@@ -83,7 +82,7 @@ func ConvertToHRAInput(elevStates map[string]fsm.ElevatorState, hallOrders local
 		States: make(map[string]HRAElevState),
 	}
 	
-	hraInput.HallRequests = localOrders.ConvertToHRAHallRequests(hallOrders)
+	hraInput.HallRequests = ConvertToHRAHallRequests(hallOrders)
 	
 	for id, state := range elevStates {
 		hraElev := HRAElevState{
@@ -108,4 +107,23 @@ func ConvertToHRAInput(elevStates map[string]fsm.ElevatorState, hallOrders local
 type HRAInput struct {
 	HallRequests [config.N_FLOORS][2]bool    `json:"hallRequests"`
 	States       map[string]HRAElevState     `json:"states"`
+}
+
+// Convert to HRA compatible format
+func ConvertToHRAHallRequests(orders OrderMap) [config.N_FLOORS][2]bool {
+	var hallRequests [config.N_FLOORS][2]bool
+	
+	for _, order := range orders {
+		if order.Status != Completed {
+			dirIndex := 0
+			if order.Dir == elevio.BT_HallUp {
+				dirIndex = 0
+			} else {
+				dirIndex = 1
+			}
+			hallRequests[order.Floor][dirIndex] = true
+		}
+	}
+	
+	return hallRequests
 }
