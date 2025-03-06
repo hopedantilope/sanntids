@@ -1,8 +1,9 @@
-package shareOrders
+package localOrders
 
 import (
 	"Driver-go/elevio"
 	"fmt"
+	"sanntids/cmd/localElevator/config"
 	"time"
 )
 
@@ -11,11 +12,13 @@ type OrderStatus int
 
 const (
 	Unknown OrderStatus = iota - 1
+	New
 	Assigned
 	Confirmed
 	Completed
 )
 
+// HallOrder structure for order management
 type HallOrder struct {
 	DelegatedID string
 	OrderID     string
@@ -25,7 +28,27 @@ type HallOrder struct {
 	Time        time.Time
 }
 
+// OrderMap maps OrderID to HallOrder
 type OrderMap map[string]HallOrder
+
+// Convert to HRA compatible format
+func ConvertToHRAHallRequests(orders OrderMap) [config.N_FLOORS][2]bool {
+	var hallRequests [config.N_FLOORS][2]bool
+	
+	for _, order := range orders {
+		if order.Status != Completed {
+			dirIndex := 0
+			if order.Dir == elevio.MD_Up {
+				dirIndex = 0
+			} else {
+				dirIndex = 1
+			}
+			hallRequests[order.Floor][dirIndex] = true
+		}
+	}
+	
+	return hallRequests
+}
 
 // HallOrderManager manages the hall orders and communicates with the network
 func HallOrderManager(
@@ -36,40 +59,25 @@ func HallOrderManager(
 	
 	// orders: a mapping of OrderID to HallOrder
 	orders := make(OrderMap)
-	ID := 'A'
 	var localOrders []HallOrder
+	
+	// Use timestamp and counter for unique IDs
+	var orderCounter uint64 = 0
 	
 	for {
 		select {
 		case request := <-localRequest:
-			onLocalRequest(&orders, &localOrders, request, string(ID), netOut)
-			ID++ // Increment order ID
+			// Create unique order ID using timestamp and counter
+			timestamp := time.Now().UnixNano()
+			orderID := fmt.Sprintf("%d-%d", timestamp, orderCounter)
+			orderCounter++
 			
-		case updateList := <-netUpdates:
-			// Process orders from other elevators
-			for _, update := range updateList {
-				onNetworkUpdate(update)
-			}
+			onLocalRequest(&orders, &localOrders, request, orderID, netOut)
 			
 		case completed := <-completedRequest:
 			onCompletedRequest(&orders, &localOrders, completed, netOut)
 		}
 	}
-}
-
-// shouldAcceptNetworkUpdate determines if the incoming update should override the local state.
-func shouldAcceptNetworkUpdate(local HallOrder, incoming HallOrder) bool {
-	switch {
-	case local.Status == Unknown && incoming.Status == Completed:
-		return false
-	case local.Status == Completed && incoming.Status == Unknown:
-		return true
-	case incoming.Status > local.Status:
-		return true
-	default:
-		return false
-	}
-	return true
 }
 
 func shouldAcceptLocalOrder(orders *OrderMap, floor int, button elevio.ButtonType) bool {
@@ -78,7 +86,21 @@ func shouldAcceptLocalOrder(orders *OrderMap, floor int, button elevio.ButtonTyp
 		return false 
 	}
 	
-	// Add logic to check if order already exists
+	// Convert button type to direction for checking
+	var dir elevio.MotorDirection
+	if button == elevio.BT_HallUp {
+		dir = elevio.MD_Up
+	} else {
+		dir = elevio.MD_Down
+	}
+	
+	// Check if this order already exists and is not completed
+	for _, order := range *orders {
+		if order.Floor == floor && order.Dir == dir && order.Status != Completed {
+			return false // Order already exists and is active
+		}
+	}
+	
 	return true
 }
 
@@ -88,9 +110,6 @@ func onLocalRequest(orders *OrderMap, localOrders *[]HallOrder, request elevio.B
 	}
 	
 	if shouldAcceptLocalOrder(orders, request.Floor, request.Button) {
-		// Assign order to elevator
-		var delID string = "A" // Local ID
-		
 		// Convert button type to direction
 		var dir elevio.MotorDirection
 		if request.Button == elevio.BT_HallUp {
@@ -99,11 +118,11 @@ func onLocalRequest(orders *OrderMap, localOrders *[]HallOrder, request elevio.B
 			dir = elevio.MD_Down
 		}
 		
-		// Register new order
+		// Register new order with "undelegated" as the delegated ID
 		newOrder := HallOrder{
-			DelegatedID: delID,
 			OrderID:     orderID,
-			Status:      Assigned,
+			Status:      New,
+			DelegatedID: "undelegated", // Set as undelegated initially
 			Floor:       request.Floor,
 			Dir:         dir,
 			Time:        time.Now(),
@@ -118,27 +137,9 @@ func onLocalRequest(orders *OrderMap, localOrders *[]HallOrder, request elevio.B
 		// Send updated order list to network module
 		netOut <- *localOrders
 		
-		// Set the corresponding button light
-		elevio.SetButtonLamp(request.Button, request.Floor, true)
-		
-		fmt.Printf("New local order created: Floor %d, Direction %v\n", newOrder.Floor, newOrder.Dir)
+		fmt.Printf("New local order created: Floor %d, Direction %v, Status: %v, DelegatedID: %s\n", 
+			newOrder.Floor, newOrder.Dir, newOrder.Status, newOrder.DelegatedID)
 	}
-}
-
-func onNetworkUpdate(update HallOrder) {
-	// Simply print the orders coming from other elevators
-	fmt.Printf("Received network order: ID %s, Floor %d, Direction %v, Status %v\n", 
-		update.OrderID, update.Floor, update.Dir, update.Status)
-		
-	// Set light for the hall order
-	var btnType elevio.ButtonType
-	if update.Dir == elevio.MD_Up {
-		btnType = elevio.BT_HallUp
-	} else {
-		btnType = elevio.BT_HallDown
-	}
-	
-	elevio.SetButtonLamp(btnType, update.Floor, true)
 }
 
 func onCompletedRequest(orders *OrderMap, localOrders *[]HallOrder, completed HallOrder, netOut chan<- []HallOrder) {
@@ -176,7 +177,7 @@ func onCompletedRequest(orders *OrderMap, localOrders *[]HallOrder, completed Ha
 // Helper function to set all lights based on current orders
 func SetLights(orders OrderMap) {
 	// Clear all lights first
-	for f := 0; f < 4; f++ { // Assuming 4 floors
+	for f := 0; f < config.N_FLOORS; f++ {
 		elevio.SetButtonLamp(elevio.BT_HallUp, f, false)
 		elevio.SetButtonLamp(elevio.BT_HallDown, f, false)
 	}

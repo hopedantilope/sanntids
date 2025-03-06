@@ -175,4 +175,5 @@ type ElevatorState struct {
     Floor          int
     MotorDirection elevio.MotorDirection
     Behaviour      elevator.ElevatorBehaviour
+    CabRequests    []bool
 }
