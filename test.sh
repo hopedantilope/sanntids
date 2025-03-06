@@ -7,7 +7,7 @@ sleep 1
 
 # Define ports and IDs for the three elevators
 PORTS=("15657" "15658" "15659")
-IDS=("elev1" "elev2" "elev3")
+IDS=("127.0.0.1" "127.0.0.1" "127.0.0.1")
 BROADCAST_PORTS=("30003" "30003" "30003") # Same broadcast port for all to enable communication
 
 # Get the directory where the script is located

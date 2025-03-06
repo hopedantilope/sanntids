@@ -1,142 +1,178 @@
 package networkOrders
 
 import (
-	"Driver-go/elevio"
+	"time"
+	"sanntids/cmd/localElevator/structs"
 	"fmt"
-	"sanntids/cmd/localOrders"
 )
 
-// NetworkOrderManager handles orders received from the network
+// NetworkOrderManager handles the conversion of local orders to network-ready format
+// and manages incoming orders from other elevators
+
+// Need to implement changing orders
+// Need to implement removing orders
 func NetworkOrderManager(
-	localID string,
-	netUpdates <-chan []localOrders.HallOrder,
-	localOrderMap *localOrders.OrderMap,
-	orderAssignmentChan chan<- localOrders.HallOrder) {
-	
-	// Network order map keeps track of all orders from other elevators
-	networkOrders := make(localOrders.OrderMap)
-	
-	for {
-		select {
-		case updateList := <-netUpdates:
-			// Process orders from other elevators
-			for _, update := range updateList {
-				onNetworkUpdate(localID, &networkOrders, localOrderMap, update, orderAssignmentChan)
-			}
-		}
-	}
+    localElevatorID string,
+    localElevStateChan <-chan structs.HRAElevState,
+    localOrdersChan <-chan structs.HallOrder,
+    incomingDataChan <-chan structs.ElevatorDataWithID,
+    outgoingDataChan chan<- structs.ElevatorDataWithID,
+) {
+    // Initialize data stores
+    elevatorStates := make(map[string]structs.HRAElevState)
+    hallOrders := make([]structs.HallOrder, 0)
+    
+    // Throttle broadcasts to prevent network flooding
+    var lastBroadcast time.Time
+    broadcastThreshold := 300 * time.Millisecond
+    
+    // Status ticker for debugging
+    statusTicker := time.NewTicker(5 * time.Second)
+    defer statusTicker.Stop()
+    
+    // Single goroutine to handle all channels
+    go func() {
+        for {
+            select {
+            case <-statusTicker.C:
+            
+            case incomingData, ok := <-incomingDataChan:
+                if !ok {
+                }
+                
+                // Skip processing our own messages
+                if incomingData.ElevatorID == localElevatorID {
+                    continue
+                }
+                
+                // Update state map with received data
+                for id, state := range incomingData.ElevatorState {
+                    elevatorStates[id] = state
+                }
+                
+                // Process incoming hall orders
+                ordersAdded := 0
+                for _, newOrder := range incomingData.HallOrders {
+                    if !isDuplicateOrder(hallOrders, newOrder) {
+                        hallOrders = append(hallOrders, newOrder)
+                        ordersAdded++
+                    }
+                }
+                
+                // Only broadcast if we actually added new orders
+                if ordersAdded > 0 {
+                    sendNetworkData(localElevatorID, elevatorStates, hallOrders, outgoingDataChan)
+                }
+                
+            case localState, ok := <-localElevStateChan:
+                if !ok {
+                    return
+                }
+                
+                    
+                elevatorStates[localElevatorID] = localState
+                
+                // Throttle broadcasts to prevent network flooding
+                if time.Since(lastBroadcast) > broadcastThreshold {
+                    sendNetworkData(localElevatorID, elevatorStates, hallOrders, outgoingDataChan)
+                    lastBroadcast = time.Now()
+                }
+                
+            case localOrder, ok := <-localOrdersChan:
+                if !ok {
+                    return
+                }
+                
+                localOrder.DelegatedID = localElevatorID
+                orderAdded := false
+                if !isDuplicateOrder(hallOrders, localOrder) {
+                    hallOrders = append(hallOrders, localOrder)
+                    orderAdded = true
+                } else {
+                    // Update the existing order status if it already exists
+                    for i := range hallOrders {
+                        if hallOrders[i].Floor == localOrder.Floor && hallOrders[i].Dir == localOrder.Dir {
+                            hallOrders[i].Status = localOrder.Status
+                            hallOrders[i].DelegatedID = localOrder.DelegatedID
+                            orderAdded = true
+                            break
+                        }
+                    }
+                }
+                
+                // Always broadcast when we get a local order, regardless of throttling
+                if orderAdded {
+                    sendNetworkData(localElevatorID, elevatorStates, hallOrders, outgoingDataChan)
+                    lastBroadcast = time.Now()
+                }
+            }
+        }
+    }()
 }
 
-// shouldAcceptNetworkUpdate determines if the incoming update should override the local state.
-func shouldAcceptNetworkUpdate(local localOrders.HallOrder, incoming localOrders.HallOrder) bool {
-	switch {
-	case local.Status == localOrders.Unknown && incoming.Status == localOrders.Completed:
-		return false
-	case local.Status == localOrders.Completed && incoming.Status == localOrders.Unknown:
-		return true
-	case incoming.Status > local.Status:
-		return true
-	default:
-		return false
-	}
+// Two orders are considered duplicates if they have the same floor and direction
+func isDuplicateOrder(orders []structs.HallOrder, newOrder structs.HallOrder) bool {
+    for _, order := range orders {
+        if order.Floor == newOrder.Floor && order.Dir == newOrder.Dir {
+			fmt.Printf("duplicate")
+            return true
+        }
+    }
+    return false
 }
 
-func onNetworkUpdate(
-	localID string,
-	networkOrders *localOrders.OrderMap,
-	localOrderMap *localOrders.OrderMap,
-	update localOrders.HallOrder,
-	orderAssignmentChan chan<- localOrders.HallOrder) {
-	
-	// First check if this order is in our local order map
-	if localOrder, existsLocal := (*localOrderMap)[update.OrderID]; existsLocal {
-		// Handle updates for our locally initiated orders
-		if update.Status == localOrders.Assigned && update.DelegatedID != "" {
-			// The order has been assigned by the system
-			orderAssignmentChan <- update
-			
-			// Only set light if this order is assigned to us
-			if update.DelegatedID == localID {
-				var btnType elevio.ButtonType
-				if update.Dir == elevio.MD_Up {
-					btnType = elevio.BT_HallUp
-				} else {
-					btnType = elevio.BT_HallDown
-				}
-				
-				elevio.SetButtonLamp(btnType, update.Floor, true)
-				fmt.Printf("Setting light ON for assigned order: Floor %d, Direction %v\n", 
-					update.Floor, update.Dir)
-			}
-		} else if shouldAcceptNetworkUpdate(localOrder, update) {
-			// Update our local record
-			(*localOrderMap)[update.OrderID] = update
-			
-			// If completed and was assigned to us, turn off the light
-			if update.Status == localOrders.Completed && update.DelegatedID == localID {
-				var btnType elevio.ButtonType
-				if update.Dir == elevio.MD_Up {
-					btnType = elevio.BT_HallUp
-				} else {
-					btnType = elevio.BT_HallDown
-				}
-				
-				elevio.SetButtonLamp(btnType, update.Floor, false)
-				fmt.Printf("Setting light OFF for completed order: Floor %d, Direction %v\n", 
-					update.Floor, update.Dir)
-			}
-		}
-	} else {
-		// Check if we already have this network order
-		if existingOrder, exists := (*networkOrders)[update.OrderID]; exists {
-			// Only update if the network version has higher priority
-			if shouldAcceptNetworkUpdate(existingOrder, update) {
-				(*networkOrders)[update.OrderID] = update
-				
-				// Handle light status based on assignment and completion
-				if update.Status == localOrders.Assigned && update.DelegatedID == localID {
-					// Assigned to us, turn on light
-					var btnType elevio.ButtonType
-					if update.Dir == elevio.MD_Up {
-						btnType = elevio.BT_HallUp
-					} else {
-						btnType = elevio.BT_HallDown
-					}
-					
-					elevio.SetButtonLamp(btnType, update.Floor, true)
-					fmt.Printf("Setting light ON for newly assigned order: Floor %d, Direction %v\n", 
-						update.Floor, update.Dir)
-				} else if update.Status == localOrders.Completed && update.DelegatedID == localID {
-					// Completed and was assigned to us, turn off light
-					var btnType elevio.ButtonType
-					if update.Dir == elevio.MD_Up {
-						btnType = elevio.BT_HallUp
-					} else {
-						btnType = elevio.BT_HallDown
-					}
-					
-					elevio.SetButtonLamp(btnType, update.Floor, false)
-					fmt.Printf("Setting light OFF for completed order: Floor %d, Direction %v\n", 
-						update.Floor, update.Dir)
-				}
-			}
-		} else {
-			// New order from network, add it
-			(*networkOrders)[update.OrderID] = update
-			
-			// Set light ONLY if assigned to us
-			if update.Status == localOrders.Assigned && update.DelegatedID == localID {
-				var btnType elevio.ButtonType
-				if update.Dir == elevio.MD_Up {
-					btnType = elevio.BT_HallUp
-				} else {
-					btnType = elevio.BT_HallDown
-				}
-				
-				elevio.SetButtonLamp(btnType, update.Floor, true)
-				fmt.Printf("Setting light ON for new assigned order: Floor %d, Direction %v\n", 
-					update.Floor, update.Dir)
-			}
-		}
-	}
+func sendNetworkData(
+    localID string,
+    states map[string]structs.HRAElevState,
+    orders []structs.HallOrder,
+    outChan chan<- structs.ElevatorDataWithID,
+) {
+    statesCopy := make(map[string]structs.HRAElevState)
+    for id, state := range states {
+        statesCopy[id] = state
+    }
+    
+    ordersCopy := make([]structs.HallOrder, len(orders))
+    copy(ordersCopy, orders)
+    
+    networkData := structs.ElevatorDataWithID{
+        ElevatorID:    localID,
+        ElevatorState: statesCopy,
+        HallOrders:    ordersCopy,
+    }
+    
+    select {
+    case outChan <- networkData:
+    default:
+    }
+}
+
+// UpdateOrderStatus updates the status of a hall order in the order list
+func UpdateOrderStatus(orders []structs.HallOrder, floor int, dir int, newStatus structs.OrderStatus) []structs.HallOrder {
+    for i, order := range orders {
+        if order.Floor == floor && int(order.Dir) == dir {
+            orders[i].Status = newStatus
+            break
+        }
+    }
+    return orders
+}
+
+// RemoveCompletedOrders removes orders with Completed status from the order list
+func RemoveCompletedOrders(orders []structs.HallOrder) []structs.HallOrder {
+    result := make([]structs.HallOrder, 0)
+    removed := 0
+    
+    for _, order := range orders {
+        if order.Status != structs.Completed {
+            result = append(result, order)
+        } else {
+            removed++
+        }
+    }
+    
+    if removed > 0 {
+    }
+    
+    return result
 }
