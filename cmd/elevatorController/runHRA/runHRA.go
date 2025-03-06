@@ -61,7 +61,7 @@ func runHRA(hallRequests [config.N_FLOORS][2]bool, states map[string]HRAElevStat
         return nil
     }
     //path,_:=os.Getwd();
-    ret, err := exec.Command("build/hall_request_assigner", "-i", string(jsonBytes)).CombinedOutput()
+    ret, err := exec.Command("build/" + hraExecutable, "-i", string(jsonBytes)).CombinedOutput()
     if err != nil {
         fmt.Println("exec.Command error: ", err)
         fmt.Println(string(ret))
