@@ -129,10 +129,10 @@ func Fsm(
     drv_floors chan int,
     drv_obstr chan bool,
     drv_stop chan bool,
-	stateRequestTx <-chan chan ElevatorState,
-) {
+	elevatorCh chan <- elevator.Elevator) {
 
     e := elevator.ElevatorInit()
+	elevatorCh <- e
 
     setAllLights(e)
     elevio.SetFloorIndicator(0)
@@ -145,34 +145,24 @@ func Fsm(
         case btn := <-drv_buttons:
             fmt.Println("Button pressed")
             onRequestButtonPress(&e, btn.Floor, btn.Button)
+			elevatorCh <- e
 
         case floor := <-drv_floors:
             fmt.Printf("Arrived at floor: %v \n", floor)
             onFloorArrival(&e, floor)
+			elevatorCh <- e
 
         case <-timer.TimeoutChan():
             fmt.Println("Timeout")
             onDoorTimeout(&e)
+			elevatorCh <- e
 
         case obstruction := <-drv_obstr:
             onObstruction(&e, obstruction)
+			elevatorCh <- e
 
         case <-drv_stop:
             //Optional - if stop button causes a state change
-
-		case requestChan := <-stateRequestTx: 
-			requestChan <- ElevatorState{
-				Floor:          e.Floor,
-				MotorDirection: e.MotorDirection,
-				Behaviour:      e.Behaviour,
-			}
         }
     }
-}
-
-// ElevatorState struct (no change)
-type ElevatorState struct {
-    Floor          int
-    MotorDirection elevio.MotorDirection
-    Behaviour      elevator.ElevatorBehaviour
 }

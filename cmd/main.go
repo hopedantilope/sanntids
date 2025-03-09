@@ -1,17 +1,18 @@
 package main
 
 import (
-	"fmt"
-	"time"
-	"flag"
 	"Driver-go/elevio"
-	"sanntids/cmd/localOrders"
-	"sanntids/cmd/networkOrders"
-	"sanntids/cmd/network/broadcastState"
-	"sanntids/cmd/localElevator/structs"
-	"sanntids/cmd/localElevator/config"
-	"sanntids/cmd/localElevator/fsm"
 	"Network-go/network/localip"
+	"flag"
+	"fmt"
+	"sanntids/cmd/localElevator/config"
+	"sanntids/cmd/localElevator/elevator"
+	"sanntids/cmd/localElevator/fsm"
+	"sanntids/cmd/localElevator/structs"
+	"sanntids/cmd/localOrders"
+	"sanntids/cmd/network/broadcastState"
+	"sanntids/cmd/networkOrders"
+	"time"
 )
 
 func main() {
@@ -48,8 +49,7 @@ func main() {
 	go elevio.PollStopButton(drv_stop)
 	
 	// FSM and state channels
-	stateRequestTx := make(chan chan fsm.ElevatorState)
-	stateChannel := make(chan fsm.ElevatorState)
+	elevatorCh := make(chan elevator.Elevator)
 	
 	// Local order channels
 	outgoingOrdersChan := make(chan structs.HallOrder)
@@ -60,22 +60,11 @@ func main() {
 	outgoingNetworkData := make(chan structs.ElevatorDataWithID)
 	
 	// Nil will be swapped out with order later
-	go fsm.Fsm(nil, drv_floors, drv_obstr, drv_stop, stateRequestTx)
+	go fsm.Fsm(nil, drv_floors, drv_obstr, drv_stop, elevatorCh)
 	
-	// Start a goroutine to periodically request and forward state
-	go func() {
-		for {
-			stateChan := make(chan fsm.ElevatorState)
-			stateRequestTx <- stateChan
-			state := <-stateChan
-			stateChannel <- state
-			time.Sleep(time.Second)
-		}
-	}()
-
 	go localOrders.HallOrderManager(
 		drv_buttons,
-		stateChannel,
+		elevatorCh,
 		outgoingOrdersChan,
 		outgoingElevStateChan,
 	)

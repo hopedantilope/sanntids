@@ -13,7 +13,7 @@ import (
 // For hall events, it sends back a new HallOrder via outgoingOrdersChan.
 func HallOrderManager(
 	localRequest <-chan elevio.ButtonEvent,
-	elevatorState <-chan fsm.ElevatorState,
+	elevatorCh <-chan elevator.Elevator,
 	outgoingOrdersChan chan<- structs.HallOrder,
 	outgoingElevStateChan chan<- structs.HRAElevState,
 ) {
@@ -31,16 +31,7 @@ func HallOrderManager(
 		CabRequests: cabRequests,
 	}
 
-	// Start a goroutine to listen for elevator state updates
-	go func() {
-		for {
-			state := <-elevatorState
-			currentState.Behavior = elevator.Eb_toString(state.Behaviour)
-			currentState.Floor = state.Floor
-			currentState.Direction = elevator.Md_toString(state.MotorDirection)
-			outgoingElevStateChan <- currentState
-		}
-	}()
+	e := elevator.ElevatorInit()
 
 	for {
 		select {
@@ -52,17 +43,24 @@ func HallOrderManager(
 					currentState.CabRequests = cabRequests
 					outgoingElevStateChan <- currentState
 				}
-				continue
-			}
-			
-			// For hall button events, create and send a new HallOrder
-			newOrder := structs.HallOrder{
-				Status:      structs.New,
-				DelegatedID: "undelegated",
-				Floor:       request.Floor,
-				Dir:         request.Button,
-			}
-			outgoingOrdersChan <- newOrder
+
+			} else if e.Requests[request.Floor][request.Button] == false {
+				// For hall button events, create and send a new HallOrder
+					newOrder := structs.HallOrder{
+						Status:      structs.New,
+						DelegatedID: "undelegated",
+						Floor:       request.Floor,
+						Dir:         request.Button,
+					}
+					outgoingOrdersChan <- newOrder
+				}
+
+		case e = <- elevatorCh:
+			currentState.Behavior = elevator.Eb_toString(e.Behaviour)
+			currentState.Floor = e.Floor
+			currentState.Direction = elevator.Md_toString(e.MotorDirection)
+
+			outgoingElevStateChan <- currentState
 		}
 	}
 }
