@@ -3,20 +3,20 @@ package localOrders
 import (
 	"Driver-go/elevio"
 	"sanntids/cmd/localElevator/config"
-	"sanntids/cmd/localElevator/structs"
-	"sanntids/cmd/localElevator/fsm"
 	"sanntids/cmd/localElevator/elevator"
+	"sanntids/cmd/localElevator/structs"
+	"fmt"
 )
 
-// HallOrderManager listens for button events.
+// LocalStateManager listens for button events.
 // For BT_Cab events, it updates the CabRequestList and includes it in the HRAElevState.
 // For hall events, it sends back a new HallOrder via outgoingOrdersChan.
-func HallOrderManager(
+func LocalStateManager(
 	localRequest <-chan elevio.ButtonEvent,
 	elevatorCh <-chan elevator.Elevator,
 	outgoingOrdersChan chan<- structs.HallOrder,
 	outgoingElevStateChan chan<- structs.HRAElevState,
-) {
+	completedRequetsChan chan<- []elevio.ButtonEvent) {
 	// Initialize the cab request list as an array to false
 	var cabRequests structs.CabRequestList
 	for i := range cabRequests {
@@ -44,23 +44,47 @@ func HallOrderManager(
 					outgoingElevStateChan <- currentState
 				}
 
-			} else if e.Requests[request.Floor][request.Button] == false {
+			} else if !e.Requests[request.Floor][request.Button] {
 				// For hall button events, create and send a new HallOrder
-					newOrder := structs.HallOrder{
-						Status:      structs.New,
-						DelegatedID: "undelegated",
-						Floor:       request.Floor,
-						Dir:         request.Button,
-					}
-					outgoingOrdersChan <- newOrder
+				newOrder := structs.HallOrder{
+					Status:      structs.New,
+					DelegatedID: "undelegated",
+					Floor:       request.Floor,
+					Dir:         request.Button,
 				}
+				outgoingOrdersChan <- newOrder
+			}
 
-		case e = <- elevatorCh:
+		case e = <-elevatorCh:
 			currentState.Behavior = elevator.Eb_toString(e.Behaviour)
 			currentState.Floor = e.Floor
 			currentState.Direction = elevator.Md_toString(e.MotorDirection)
+			// To make sure completed cab requests gets reset to false:
+			currentState.CabRequests = elevator.GetCabRequests(e.Requests)
+			//Sending completed requets to a channel
+			completedRequests := getClearedHallRequests(e.Cleared)
+			if len(completedRequests) == 0 {
+				fmt.Println("No cleared hall requests found.")
+			} else {
+				completedRequetsChan <- completedRequests
+			}
 
 			outgoingElevStateChan <- currentState
 		}
 	}
+}
+
+func getClearedHallRequests(cleared [config.N_FLOORS][config.N_BUTTONS]bool) []elevio.ButtonEvent {
+	var requests []elevio.ButtonEvent
+	for floor := 0; floor < config.N_FLOORS; floor++ {
+		for btn := 0; btn < config.N_BUTTONS; btn++ {
+			if (cleared[floor][btn]) && (elevio.ButtonType(btn) != elevio.BT_Cab) {
+				requests = append(requests, elevio.ButtonEvent{
+					Floor:  floor,
+					Button: elevio.ButtonType(btn),
+				})
+			}
+		}
+	}
+	return requests
 }

@@ -12,7 +12,6 @@ import (
 	"sanntids/cmd/localOrders"
 	"sanntids/cmd/network/broadcastState"
 	"sanntids/cmd/networkOrders"
-	"time"
 )
 
 func main() {
@@ -29,7 +28,7 @@ func main() {
 
 	// if not set use ip adress
 	if *elevatorID == "" {
-		*elevatorID, _ =localip.LocalIP()
+		*elevatorID, _ = localip.LocalIP()
 	}
 	fmt.Printf("Local elevator ID: %s, Network port: %d\n", *elevatorID, *broadcastPortFlag)
 
@@ -47,36 +46,39 @@ func main() {
 	go elevio.PollFloorSensor(drv_floors)
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
-	
+
 	// FSM and state channels
 	elevatorCh := make(chan elevator.Elevator)
-	
+
 	// Local order channels
 	outgoingOrdersChan := make(chan structs.HallOrder)
 	outgoingElevStateChan := make(chan structs.HRAElevState)
-	
+	completedRequetsChan := make(chan []elevio.ButtonEvent)
+
 	// Network communication channels
 	incomingNetworkData := make(chan structs.ElevatorDataWithID)
 	outgoingNetworkData := make(chan structs.ElevatorDataWithID)
-	
+
 	// Nil will be swapped out with order later
 	go fsm.Fsm(nil, drv_floors, drv_obstr, drv_stop, elevatorCh)
-	
-	go localOrders.HallOrderManager(
+
+	go localOrders.LocalStateManager(
 		drv_buttons,
 		elevatorCh,
 		outgoingOrdersChan,
 		outgoingElevStateChan,
+		completedRequetsChan,
 	)
-	
+
 	go networkOrders.NetworkOrderManager(
 		*elevatorID,
 		outgoingElevStateChan,
 		outgoingOrdersChan,
+		completedRequetsChan,
 		incomingNetworkData,
 		outgoingNetworkData,
 	)
-	
+
 	go broadcastState.BroadcastState(outgoingNetworkData, *broadcastPortFlag)
 	go broadcastState.ReceiveState(incomingNetworkData, *broadcastPortFlag)
 

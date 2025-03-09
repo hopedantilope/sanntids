@@ -38,6 +38,15 @@ func Md_toString(md elevio.MotorDirection) string {
     }
 }
 
+func GetCabRequests(requests [config.N_FLOORS][config.N_BUTTONS]bool) [config.N_FLOORS]bool {
+    var cabOrders [config.N_FLOORS]bool
+    for floor := 0; floor < config.N_FLOORS; floor++ {
+        cabOrders[floor] = requests[floor][elevio.BT_Cab]
+    }
+    return cabOrders
+}
+
+
 type Button int
 const (
     BT_HallUp   Button = iota
@@ -50,6 +59,7 @@ type Elevator struct {
     Floor     int
     MotorDirection      elevio.MotorDirection
     Requests  [config.N_FLOORS][config.N_BUTTONS]bool
+    Cleared   [config.N_FLOORS][config.N_BUTTONS]bool
     Behaviour ElevatorBehaviour
 
     Config struct {
@@ -61,13 +71,14 @@ type Elevator struct {
 
 func ElevatorInit() Elevator {
     // Create a zero-initialized fixed-size 2D array for Requests
-    var requests [config.N_FLOORS][config.N_BUTTONS]bool
+    var zeros [config.N_FLOORS][config.N_BUTTONS]bool
 
     // Initialize elevator with default values
     e := Elevator{
         Floor:          0,
         MotorDirection: elevio.MD_Stop,  // Default motor direction
-        Requests:       requests,
+        Requests:       zeros,
+        Cleared:        zeros,  
         Behaviour:      EB_Idle,         // Default behaviour
     }
 

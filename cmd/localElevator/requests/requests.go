@@ -160,3 +160,45 @@ func Requests_clearAtCurrentFloor(e elevator.Elevator) elevator.Elevator {
     return e
 }
 
+func Requests_getClearedAtCurrentFloor(e elevator.Elevator) [config.N_FLOORS][config.N_BUTTONS]bool {
+	var cleared [config.N_FLOORS][config.N_BUTTONS]bool
+	floor := e.Floor
+	switch e.Config.ClearRequestVariant {
+	case config.CV_All:
+		for btn := 0; btn < config.N_BUTTONS; btn++ {
+			if e.Requests[floor][btn] {
+				cleared[floor][btn] = true
+			}
+		}
+	case config.CV_InDirn:
+		if e.Requests[floor][elevator.BT_Cab] {
+			cleared[floor][elevator.BT_Cab] = true
+		}
+		switch e.MotorDirection {
+		case elevio.MD_Up:
+			if e.Requests[floor][elevator.BT_HallUp] {
+				cleared[floor][elevator.BT_HallUp] = true
+			}
+			if !requests_above(e) && e.Requests[floor][elevator.BT_HallDown] {
+				cleared[floor][elevator.BT_HallDown] = true
+			}
+		case elevio.MD_Down:
+			if e.Requests[floor][elevator.BT_HallDown] {
+				cleared[floor][elevator.BT_HallDown] = true
+			}
+			if !requests_below(e) && e.Requests[floor][elevator.BT_HallUp] {
+				cleared[floor][elevator.BT_HallUp] = true
+			}
+		default:
+			if e.Requests[floor][elevator.BT_HallUp] {
+				cleared[floor][elevator.BT_HallUp] = true
+			}
+			if e.Requests[floor][elevator.BT_HallDown] {
+				cleared[floor][elevator.BT_HallDown] = true
+			}
+		}
+	}
+	return cleared
+}
+
+

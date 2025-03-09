@@ -1,9 +1,10 @@
 package networkOrders
 
 import (
-	"time"
-	"sanntids/cmd/localElevator/structs"
+	"Driver-go/elevio"
 	"fmt"
+	"sanntids/cmd/localElevator/structs"
+	"time"
 )
 
 // NetworkOrderManager handles the conversion of local orders to network-ready format
@@ -15,6 +16,7 @@ func NetworkOrderManager(
     localElevatorID string,
     localElevStateChan <-chan structs.HRAElevState,
     localOrdersChan <-chan structs.HallOrder,
+    completedRequetsChan <-chan []elevio.ButtonEvent,
     incomingDataChan <-chan structs.ElevatorDataWithID,
     outgoingDataChan chan<- structs.ElevatorDataWithID,
 ) {

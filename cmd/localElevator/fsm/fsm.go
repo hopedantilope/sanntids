@@ -35,6 +35,9 @@ func onRequestButtonPress(el *elevator.Elevator, btnFloor int, btnType elevio.Bu
 	switch el.Behaviour {
 	case elevator.EB_DoorOpen:
 		if requests.Requests_shouldClearImmediately(*el, btnFloor, btnType) {
+			var cleared [config.N_FLOORS][config.N_BUTTONS]bool
+			cleared[btnFloor][btnType] = true
+			el.Cleared = cleared
 			timer.TimerStart(el.Config.DoorOpenDuration_s)
 		} else {
 			el.Requests[btnFloor][btnType] = true
@@ -76,6 +79,8 @@ func onFloorArrival(el *elevator.Elevator, newFloor int) {
 		if requests.RequestsShouldStop(*el) {
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			elevio.SetDoorOpenLamp(true)
+			cleared := requests.Requests_getClearedAtCurrentFloor(*el)
+			el.Cleared = cleared
 			*el = requests.Requests_clearAtCurrentFloor(*el)
 			timer.TimerStart(el.Config.DoorOpenDuration_s)
 			setAllLights(*el)
