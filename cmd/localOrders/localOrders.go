@@ -41,6 +41,7 @@ func LocalStateManager(
 				if request.Floor >= 0 && request.Floor < config.N_FLOORS {
 					cabRequests[request.Floor] = true
 					currentState.CabRequests = cabRequests
+					fmt.Println("Sending updated elevator state (cab request updated):", currentState)
 					outgoingElevStateChan <- currentState
 				}
 
@@ -52,6 +53,7 @@ func LocalStateManager(
 					Floor:       request.Floor,
 					Dir:         request.Button,
 				}
+				fmt.Println("Sending new hall order:", newOrder)
 				outgoingOrdersChan <- newOrder
 			}
 
@@ -63,12 +65,11 @@ func LocalStateManager(
 			currentState.CabRequests = elevator.GetCabRequests(e.Requests)
 			//Sending completed requets to a channel
 			completedRequests := getClearedHallRequests(e.Cleared)
-			if len(completedRequests) == 0 {
-				fmt.Println("No cleared hall requests found.")
-			} else {
+			if len(completedRequests) > 0 {
+				fmt.Println("Sending completed hall requests:", completedRequests)
 				completedRequetsChan <- completedRequests
 			}
-
+			fmt.Println("Sending updated elevator state (elevator update):", currentState)
 			outgoingElevStateChan <- currentState
 		}
 	}
