@@ -7,6 +7,7 @@ import "encoding/json"
 import "runtime"
 import "sanntids/cmd/localElevator/elevator"
 import "sanntids/cmd/localElevator/config"
+import "sanntids/cmd/util"
 
 // Struct members must be public in order to be accessible by json.Marshal/.Unmarshal
 // This means they must start with a capital letter, so we need to use field renaming struct tags to make them camelCase
