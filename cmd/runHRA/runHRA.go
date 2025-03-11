@@ -8,8 +8,6 @@ import "runtime"
 import "sanntids/cmd/localElevator/config"
 import "sanntids/cmd/localElevator/structs"
 import "Driver-go/elevio"
-import "Network-go/network/localip"
-import "cmd/util"
 
 
 type HRAInput struct {
@@ -17,15 +15,9 @@ type HRAInput struct {
     States          map[string]structs.HRAElevState                      `json:"states"`
 }
 
-func RunHRA(elevData structs.ElevatorDataWithID, elevatorID string) structs.ElevatorDataWithID {
-	orders, states := TransformFromElevatorState(elevData)
-    keys := make([]string, 0, len(states))
+func RunHRA(elevData structs.ElevatorDataWithID) structs.ElevatorDataWithID {
+	states, orders := TransformToHRA(elevData)
 
-    for key := range states {
-        keys = append(keys, key)
-    }
-
-    if(util.IsLowestIP(keys, elevatorID))
 	hraExecutable := ""
 	switch runtime.GOOS {
 		case "linux":   hraExecutable = "hall_request_assigner"
@@ -34,9 +26,10 @@ func RunHRA(elevData structs.ElevatorDataWithID, elevatorID string) structs.Elev
 	}
 	fmt.Println(hraExecutable)
 	
-	// Prepare the input for the HRA executable
+	
+	//input := TransformToHRA(elevData, elevatorID)
 	input := HRAInput{
-		HallRequests: orders[elevData.ElevatorID], 
+		HallRequests: orders, 
 		States: states,
 	}
 	
@@ -54,26 +47,25 @@ func RunHRA(elevData structs.ElevatorDataWithID, elevatorID string) structs.Elev
 	}
 	
 	assignedOrders := make(map[string][config.N_FLOORS][2]bool)
-	err = json.Unmarshal(ret, &output)
+	err = json.Unmarshal(ret, &assignedOrders)
 	if err != nil {
 		fmt.Println("json.Unmarshal error: ", err)
 		return structs.ElevatorDataWithID{}
 	}
 	
 	fmt.Printf("output: \n")
-	for k, v := range output {
+	for k, v := range assignedOrders {
 		fmt.Printf("%6v :  %+v\n", k, v)
 	}
 	
 	// Transform the HRA output back to ElevatorDataWithID
-	return TransformToElevatorState(assignedOrders, states)
+	return TransformFromHRA(assignedOrders, states, elevData.ElevatorID)
 }
 
-func TransformToElevatorState(assignedOrders map[string][config.N_FLOORS][2]bool, states map[string]structs.HRAElevState, elevatorID string) structs.ElevatorDataWithID {
+func TransformFromHRA(assignedOrders map[string][config.N_FLOORS][2]bool, states map[string]structs.HRAElevState, elevatorID string) structs.ElevatorDataWithID {
 	var transformedOrder structs.ElevatorDataWithID
-
+	var hallOrders []structs.HallOrder
 	for id, arr := range assignedOrders {
-		var hallOrders []structs.HallOrder
 		for floor, directions := range arr {
 			for dir, isActive := range directions {
 				if isActive {
@@ -106,23 +98,19 @@ func TransformToElevatorState(assignedOrders map[string][config.N_FLOORS][2]bool
 	return transformedOrder
 }
 
-func TransformFromElevatorState(elevData structs.ElevatorDataWithID) (map[string][config.N_FLOORS][2]bool, map[string]structs.HRAElevState) {
-	assignedOrders := make(map[string][config.N_FLOORS][2]bool)
-	states := make(map[string]structs.HRAElevState)
+func TransformToHRA(elevData structs.ElevatorDataWithID) (map[string]structs.HRAElevState, [config.N_FLOORS][2]bool) {
+	hallrequests := [config.N_FLOORS][2]bool{}
 
-    var orders [config.N_FLOORS][2]bool
-    // Process each hall order to set the corresponding flag in the 2D orders array.
-    for _, order := range elevData.HallOrders {
-        switch order.Dir {
-        case elevio.BT_HallDown:
-            orders[order.Floor][0] = true
-        case elevio.BT_HallUp:
-            orders[order.Floor][1] = true
-        }
-    }
-    // Map the elevator ID to its assigned orders and state.
-    assignedOrders[elevData.ElevatorID] = orders
-    states = elevData.ElevatorState
+	for _,order := range elevData.HallOrders{
+		orderFloor := order.Floor
+		orderDirection := order.Dir
+		if orderDirection == elevio.BT_HallDown {
+			hallrequests[orderFloor][0] = true
+		}	
+		if orderDirection == elevio.BT_HallUp {
+			hallrequests[orderFloor][1] = true
+		}
+	}
+	return elevData.ElevatorState, hallrequests
 
-	return assignedOrders, states
 }
