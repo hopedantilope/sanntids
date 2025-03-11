@@ -22,11 +22,11 @@ func RunHRA(elevData structs.ElevatorDataWithID) structs.ElevatorDataWithID {
 	switch runtime.GOOS {
 		case "linux":   hraExecutable = "hall_request_assigner"
 		case "windows": hraExecutable = "hall_request_assigner.exe"
-		default:        panic("OS not supported")
+		default:        hraExecutable = "hall_request_assigner"
 	}
 	fmt.Println(hraExecutable)
 	
-	
+	fmt.Printf(orders)
 	//input := TransformToHRA(elevData, elevatorID)
 	input := HRAInput{
 		HallRequests: orders, 
