@@ -21,7 +21,7 @@ func NetworkOrderManager(
     // Initialize data stores
     elevatorStates := make(map[string]structs.HRAElevState)
     hallOrders := make([]structs.HallOrder, 0)
-    var ipMap map[string]time.Time
+    ipMap := make(map[string]time.Time, 0)
     // Create a ticker that periodically sends network data
     transmitTicker := time.NewTicker(500 * time.Millisecond)
     defer transmitTicker.Stop()
@@ -41,6 +41,7 @@ func NetworkOrderManager(
             for key := range ipMap {
                 ipList = append(ipList, key)
             }
+            //
 
             if !ok {
                 return
@@ -94,8 +95,8 @@ func NetworkOrderManager(
                                     }
                                 }
                             }   
+                            break
                         }
-                        break 
                     }
                 }
             }    
