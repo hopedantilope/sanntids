@@ -18,7 +18,7 @@ func LocalStateManager(
 	outgoingElevStateChan chan<- structs.HRAElevState,
 	completedRequetsChan chan<- []elevio.ButtonEvent) {
 	// Initialize the cab request list as an array to false
-	var cabRequests structs.CabRequestList
+	cabRequests := make([]bool, config.N_FLOORS)
 	for i := range cabRequests {
 		cabRequests[i] = false
 	}

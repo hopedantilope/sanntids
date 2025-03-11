@@ -38,10 +38,10 @@ func Md_toString(md elevio.MotorDirection) string {
     }
 }
 
-func GetCabRequests(requests [config.N_FLOORS][config.N_BUTTONS]bool) [config.N_FLOORS]bool {
-    var cabOrders [config.N_FLOORS]bool
+func GetCabRequests(requests [config.N_FLOORS][config.N_BUTTONS]bool) []bool {
+    var cabOrders []bool
     for floor := 0; floor < config.N_FLOORS; floor++ {
-        cabOrders[floor] = requests[floor][elevio.BT_Cab]
+        cabOrders = append(cabOrders, requests[floor][elevio.BT_Cab])
     }
     return cabOrders
 }

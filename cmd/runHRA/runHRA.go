@@ -25,8 +25,7 @@ func RunHRA(elevData structs.ElevatorDataWithID) structs.ElevatorDataWithID {
 		default:        hraExecutable = "hall_request_assigner"
 	}
 	fmt.Println(hraExecutable)
-	
-	fmt.Printf(orders)
+
 	//input := TransformToHRA(elevData, elevatorID)
 	input := HRAInput{
 		HallRequests: orders, 

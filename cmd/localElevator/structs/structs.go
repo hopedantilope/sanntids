@@ -2,7 +2,6 @@ package structs
 
 import (
 	"Driver-go/elevio"
-	"sanntids/cmd/localElevator/config"
 )
 
 type OrderStatus int
@@ -23,13 +22,11 @@ type HallOrder struct {
 	Dir         elevio.ButtonType
 }
 
-type CabRequestList [config.N_FLOORS]bool
-
 type HRAElevState struct {
-	Behavior    string 
-	Floor       int
-	Direction   string
-	CabRequests CabRequestList
+    Behavior    string      `json:"behaviour"`
+    Floor       int         `json:"floor"` 
+    Direction   string      `json:"direction"`
+    CabRequests []bool      `json:"cabRequests"`
 }
 
 type ElevatorDataWithID struct {

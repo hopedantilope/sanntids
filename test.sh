@@ -20,14 +20,14 @@ start_simulator() {
     # Choose the right terminal command based on OS
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         # Linux (assuming gnome-terminal)
-        gnome-terminal -- bash -c "cd $DIR/build && ./SimElevatorServer --port $port; exec bash" &
+        gnome-terminal -- bash -c "cd $DIR && ./build/SimElevatorServer --port $port; exec bash" &
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS
-        osascript -e "tell app \"Terminal\" to do script \"cd $DIR/build && ./SimElevatorServer --port $port\"" &
+        osascript -e "tell app \"Terminal\" to do script \"cd $DIR && ./build/SimElevatorServer --port $port\"" &
     else
         # Fallback for other systems
         echo "Starting simulator on port=$port in the background..."
-        cd $DIR/build && ./SimElevatorServer --port $port &
+        cd $DIR && ./build/SimElevatorServer --port $port &
     fi
     
     # Give the simulator time to start up
@@ -43,14 +43,14 @@ start_main() {
     # Choose the right terminal command based on OS
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
         # Linux (assuming gnome-terminal)
-        gnome-terminal -- bash -c "cd $DIR/build && ./main --port=$port --id=$id --broadcast=$broadcast_port; exec bash" &
+        gnome-terminal -- bash -c "cd $DIR && ./build/main --port=$port --id=$id --broadcast=$broadcast_port; exec bash" &
     elif [[ "$OSTYPE" == "darwin"* ]]; then
         # macOS
-        osascript -e "tell app \"Terminal\" to do script \"cd $DIR/build && ./main --port=$port --id=$id --broadcast=$broadcast_port\"" &
+        osascript -e "tell app \"Terminal\" to do script \"cd $DIR && ./build/main --port=$port --id=$id --broadcast=$broadcast_port\"" &
     else
         # Fallback for other systems
         echo "Starting main program with port=$port, id=$id in the background..."
-        cd $DIR/build && ./main --port=$port --id=$id --broadcast=$broadcast_port &
+        cd $DIR && ./build/main --port=$port --id=$id --broadcast=$broadcast_port &
     fi
 }
 
