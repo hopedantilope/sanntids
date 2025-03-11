@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sanntids/cmd/localElevator/structs"
 	"time"
+    "sanntids/cmd/util"
 )
 
 // NetworkOrderManager handles the conversion of local orders to network-ready format
@@ -20,7 +21,7 @@ func NetworkOrderManager(
     // Initialize data stores
     elevatorStates := make(map[string]structs.HRAElevState)
     hallOrders := make([]structs.HallOrder, 0)
-    
+    var ipMap map[string]time.Time
     // Create a ticker that periodically sends network data
     transmitTicker := time.NewTicker(500 * time.Millisecond)
     defer transmitTicker.Stop()
@@ -33,6 +34,8 @@ func NetworkOrderManager(
             
         // Process incoming data from other elevators
         case incomingData, ok := <-incomingDataChan:
+            ipMap[incomingData.ElevatorID] = time.Now()
+
             if !ok {
                 return
             }
@@ -55,13 +58,20 @@ func NetworkOrderManager(
                     hallOrders = append(hallOrders, newOrder)
                 } else {
                     // Update existing order if necessary
-                    for i := range hallOrders {
-                        if hallOrders[i].Floor == newOrder.Floor && hallOrders[i].Dir == newOrder.Dir {
-                            // Only update if the order has a different status or delegation
-                            if hallOrders[i].Status != newOrder.Status || hallOrders[i].DelegatedID != newOrder.DelegatedID {
+                    for i, order := range hallOrders {
+                        if order.Floor == newOrder.Floor && order.Dir == newOrder.Dir {
+                            // Accept everthing the master says:
+                            if util.IsLowestIP(ipList, incomingData.ElevatorID) {
                                 hallOrders[i].Status = newOrder.Status
                                 hallOrders[i].DelegatedID = newOrder.DelegatedID
                             }
+                            // The master should only accept certain orders:
+                            if util.IsLowestIP(ipList, localElevatorID) {
+                                if sho {
+                                    
+                                }
+                            }
+                            
                             break
                         }
                     }
@@ -215,4 +225,19 @@ func RemoveCompletedOrders(orders []structs.HallOrder) []structs.HallOrder {
     }
     
     return result
+}
+
+func shouldAcceptOrder(newOrder structs.HallOrder, order structs.HallOrder) bool {
+    switch newOrder.Status {
+    case structs.New:
+        if order.Status == structs.Completed {
+            
+        }
+    case structs.Assigned:
+        status = "Assigned"
+    case structs.Confirmed:
+        status = "Confirmed"
+    case structs.Completed:
+        status = "Completed"
+    }
 }
