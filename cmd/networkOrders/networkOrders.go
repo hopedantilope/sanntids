@@ -274,7 +274,7 @@ func assignOrders(data structs.ElevatorDataWithID, ipMap map[string]time.Time, l
 		ipList = append(ipList, key)
 	}
 	if util.IsLowestIP(ipList, localID) {
-		data = runHRA.RunHRA(data, localID)
+		data = runHRA.RunHRA(data)
 	}
 	return data
 }
