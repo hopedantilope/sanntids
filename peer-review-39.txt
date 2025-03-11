@@ -1,0 +1,21 @@
+35fd589d
+9
+feedback
+
+f9a10c31
+9
+feedback
+
+8b4f9b43
+9
+feedback
+
+7d915672
+7
+* Should split code into packages, now all the code is in main.go
+* Single letter variable names some places makes it a bit hard to understand
+* Should have a README.md or atleast add how to use the code to doc.txt
+* Suggest using some automatic way of assigning id like either ip-address or pid-id
+* Missing some config to keep track of global variables like numfloor and numbuttons
+* Good use of channels
+* FSM, Requests and elevator.go looks good
