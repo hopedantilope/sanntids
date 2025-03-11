@@ -1,6 +1,9 @@
 35fd589d
 9
-feedback
+* Config file should be a go file, not a yaml file
+* Use submodules for driver so that you dont have to link your github
+* The request assigner shouldnt be in the same folder as the single elevator, make a new controller or assigner folder
+* 
 
 f9a10c31
 9
