@@ -34,7 +34,13 @@ func NetworkOrderManager(
             
         // Process incoming data from other elevators
         case incomingData, ok := <-incomingDataChan:
+            //Change this:
             ipMap[incomingData.ElevatorID] = time.Now()
+            ipList := make([]string, 0, len(ipMap))
+
+            for key := range ipMap {
+                ipList = append(ipList, key)
+            }
 
             if !ok {
                 return
@@ -67,17 +73,32 @@ func NetworkOrderManager(
                             }
                             // The master should only accept certain orders:
                             if util.IsLowestIP(ipList, localElevatorID) {
-                                if sho {
+                                switch newOrder.Status {
+                                case structs.New:
+                                    if order.Status == structs.Completed {
+                                        hallOrders[i].Status = newOrder.Status
+                                        hallOrders[i].DelegatedID = newOrder.DelegatedID
+                                    }
+                                case structs.Assigned:
+                                    //Maybe do something like this?
+                                    //Add id to list of elevetors that knows about the order
+                                    //If every alive elevator knows about the order, set status to confirmed
+                                    //Turn on lights
                                     
+                                case structs.Confirmed:
+                                    //Do nothing
+                                case structs.Completed:
+                                    if order.Status != structs.New {
+                                        hallOrders[i].Status = newOrder.Status
+                                        hallOrders[i].DelegatedID = newOrder.DelegatedID
+                                    }
                                 }
-                            }
-                            
-                            break
+                            }   
                         }
+                        break 
                     }
                 }
-            }
-            
+            }    
         // Update local elevator state
         case localState, ok := <-localElevStateChan:
             if !ok {
@@ -225,19 +246,4 @@ func RemoveCompletedOrders(orders []structs.HallOrder) []structs.HallOrder {
     }
     
     return result
-}
-
-func shouldAcceptOrder(newOrder structs.HallOrder, order structs.HallOrder) bool {
-    switch newOrder.Status {
-    case structs.New:
-        if order.Status == structs.Completed {
-            
-        }
-    case structs.Assigned:
-        status = "Assigned"
-    case structs.Confirmed:
-        status = "Confirmed"
-    case structs.Completed:
-        status = "Completed"
-    }
 }
