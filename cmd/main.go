@@ -10,7 +10,7 @@ import (
 	"sanntids/cmd/localElevator/fsm"
 	"sanntids/cmd/localElevator/structs"
 	"sanntids/cmd/localOrders"
-	"sanntids/cmd/network/broadcastState"
+	"sanntids/cmd/broadcastState"
 	"sanntids/cmd/networkOrders"
 )
 
