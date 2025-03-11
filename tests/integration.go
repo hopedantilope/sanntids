@@ -58,45 +58,21 @@ var (
 	}
 )
 
-// Tests the transformation from HRA format to internal ElevatorData format
-func testTransformationToElevatorData() bool {
-	// Transform data to elevator format
-	result := runHRA.TransformToElevatorState(testHallRequestAssignments, testElevatorStates, )
-	
-	// Check if ElevatorID is set - this should be the ID of the local elevator
-	if result.ElevatorID == "" {
-		fmt.Println("FAIL: TransformToElevatorData - Missing elevator ID in result")
-		return false
-	}
-	
-	// Check if hall orders are correctly transformed
-	// We expect only orders for the local elevator ID to be included
-	for _, order := range result.HallOrders {
-		if order.DelegatedID != result.ElevatorID {
-			fmt.Printf("FAIL: TransformToElevatorData - Order delegated to %s but local elevator is %s\n", 
-				order.DelegatedID, result.ElevatorID)
-			return false
-		}
-	}
-	
-	// Check if elevator states for all elevators are present
-	if len(result.ElevatorState) != 3 {
-		fmt.Println("FAIL: TransformToElevatorData - Expected 3 elevator states, got", len(result.ElevatorState))
-		return false
-	}
-	
-	return true
-}
-
-// Tests the transformation from internal ElevatorData format back to HRA format
-func testTransformationFromElevatorData() bool {
-	// Create elevator data with test values for local elevator
+// Tests the transformation from ElevatorData format to HRA format
+func testTransformationToHRA() bool {
+	// Create sample elevator data
 	var hallOrders []structs.HallOrder
 	hallOrders = append(hallOrders, structs.HallOrder{
 		Floor:       1,
 		Dir:         elevio.BT_HallDown,
 		Status:      structs.Assigned,
 		DelegatedID: localElevID,
+	})
+	hallOrders = append(hallOrders, structs.HallOrder{
+		Floor:       3,
+		Dir:         elevio.BT_HallUp,
+		Status:      structs.Assigned,
+		DelegatedID: otherElevID1,
 	})
 	
 	elevatorData := structs.ElevatorDataWithID{
@@ -105,33 +81,126 @@ func testTransformationFromElevatorData() bool {
 		ElevatorState: testElevatorStates,
 	}
 	
-	// Transform back
-	reconvertedAssignments, reconvertedStates := runHRA.TransformFromElevatorState(elevatorData)
+	// Transform to HRA format
+	states, hallRequests := runHRA.TransformToHRA(elevatorData)
 	
-	// Check if the local elevator ID exists in reconverted assignments
-	if _, exists := reconvertedAssignments[localElevID]; !exists {
-		fmt.Println("FAIL: TransformFromElevatorData - Missing local elevator ID in assignments")
+	// Check if all elevator states are preserved
+	if len(states) != len(testElevatorStates) {
+		fmt.Println("FAIL: TransformToHRA - Wrong number of elevator states")
 		return false
 	}
 	
-	// Verify the order at floor 1, direction down is correctly set for local elevator
-	if !reconvertedAssignments[localElevID][1][0] {
-		fmt.Println("FAIL: TransformFromElevatorData - Order at floor 1, down direction not set for local elevator")
+	// Check if hall requests are correctly transformed
+	// Floor 1, down direction should be true
+	if !hallRequests[1][0] {
+		fmt.Println("FAIL: TransformToHRA - Order at floor 1, down direction not set")
 		return false
 	}
 	
-	// Validate states
-	if len(reconvertedStates) != len(testElevatorStates) {
-		fmt.Println("FAIL: TransformFromElevatorData - Wrong number of elevator states")
+	// Floor 3, up direction should be true
+	if !hallRequests[3][1] {
+		fmt.Println("FAIL: TransformToHRA - Order at floor 3, up direction not set")
 		return false
 	}
 	
-	// Check that each elevator state from input is present in output
-	for id := range testElevatorStates {
-		if _, exists := reconvertedStates[id]; !exists {
-			fmt.Printf("FAIL: TransformFromElevatorData - Missing elevator state for %s\n", id)
-			return false
+	return true
+}
+
+// Tests the transformation from HRA format back to ElevatorData format
+func testTransformationFromHRA() bool {
+	// Transform from HRA format to ElevatorData
+	result := runHRA.TransformFromHRA(testHallRequestAssignments, testElevatorStates, localElevID)
+	
+	// Check if ElevatorID is set correctly
+	if result.ElevatorID != localElevID {
+		fmt.Printf("FAIL: TransformFromHRA - Expected elevator ID %s, got %s\n", 
+			localElevID, result.ElevatorID)
+		return false
+	}
+	
+	// Check if hall orders are correctly transformed
+	// We should have orders for all active requests in testHallRequestAssignments
+	expectedOrderCount := 0
+	for _, floors := range testHallRequestAssignments {
+		for _, directions := range floors {
+			for _, isActive := range directions {
+				if isActive {
+					expectedOrderCount++
+				}
+			}
 		}
+	}
+	
+	if len(result.HallOrders) != expectedOrderCount {
+		fmt.Printf("FAIL: TransformFromHRA - Expected %d hall orders, got %d\n", 
+			expectedOrderCount, len(result.HallOrders))
+		return false
+	}
+	
+	// Check if elevator states are preserved
+	if len(result.ElevatorState) != len(testElevatorStates) {
+		fmt.Println("FAIL: TransformFromHRA - Wrong number of elevator states")
+		return false
+	}
+	
+	return true
+}
+
+// Tests the complete HRA flow
+func testCompleteHRAFlow() bool {
+	// Create elevator data with test values
+	var hallOrders []structs.HallOrder
+	hallOrders = append(hallOrders, structs.HallOrder{
+		Floor:       1,
+		Dir:         elevio.BT_HallDown,
+		Status:      structs.Assigned,
+		DelegatedID: localElevID,
+	})
+	hallOrders = append(hallOrders, structs.HallOrder{
+		Floor:       3,
+		Dir:         elevio.BT_HallUp,
+		Status:      structs.Assigned,
+		DelegatedID: otherElevID1,
+	})
+	
+	initialData := structs.ElevatorDataWithID{
+		ElevatorID:    localElevID,
+		HallOrders:    hallOrders,
+		ElevatorState: testElevatorStates,
+	}
+	
+	// This test won't actually run the external HRA executable
+	// but we can test that our transformations work correctly
+	states, _ := runHRA.TransformToHRA(initialData)
+	result := runHRA.TransformFromHRA(testHallRequestAssignments, states, localElevID)
+	
+	// Check that we got a valid result
+	if result.ElevatorID != localElevID {
+		fmt.Println("FAIL: Complete HRA flow - Invalid elevator ID in result")
+		return false
+	}
+	
+	if len(result.ElevatorState) != len(testElevatorStates) {
+		fmt.Println("FAIL: Complete HRA flow - Wrong number of elevator states")
+		return false
+	}
+	
+	// Check orders were converted correctly
+	expectedOrderCount := 0
+	for _, floors := range testHallRequestAssignments {
+		for _, directions := range floors {
+			for _, isActive := range directions {
+				if isActive {
+					expectedOrderCount++
+				}
+			}
+		}
+	}
+	
+	if len(result.HallOrders) != expectedOrderCount {
+		fmt.Printf("FAIL: Complete HRA flow - Expected %d hall orders, got %d\n", 
+			expectedOrderCount, len(result.HallOrders))
+		return false
 	}
 	
 	return true
@@ -142,12 +211,16 @@ func runIntegrationTests() {
 	fmt.Println("Running integration tests...")
 	
 	// Test transformations
-	if testTransformationToElevatorData() {
-		fmt.Println("PASS: Transformation to ElevatorData")
+	if testTransformationToHRA() {
+		fmt.Println("PASS: Transformation to HRA format")
 	}
 	
-	if testTransformationFromElevatorData() {
-		fmt.Println("PASS: Transformation from ElevatorData")
+	if testTransformationFromHRA() {
+		fmt.Println("PASS: Transformation from HRA format")
+	}
+	
+	if testCompleteHRAFlow() {
+		fmt.Println("PASS: Complete HRA flow")
 	}
 	
 	fmt.Println("Integration tests completed")
@@ -241,4 +314,4 @@ func main() {
 	}()
 
 	select {}
-}
+	}
