@@ -130,7 +130,7 @@ func onObstruction(el *elevator.Elevator, obstruction bool) {
 
 
 func Fsm(
-    drv_buttons chan elevio.ButtonEvent,
+    drv_buttons chan [config.N_FLOORS][config.N_BUTTONS]bool,
     drv_floors chan int,
     drv_obstr chan bool,
     drv_stop chan bool,
@@ -147,11 +147,17 @@ func Fsm(
 
     for {
         select {
-        case btn := <-drv_buttons:
+        case requests := <-drv_buttons:
             fmt.Println("Button pressed")
-            onRequestButtonPress(&e, btn.Floor, btn.Button)
-			elevatorCh <- e
-
+			//Should proabaly change this
+			for floor := 0; floor < config.N_FLOORS; floor++ {
+				for btn := 0; btn < config.N_BUTTONS; btn++ {
+					if requests[floor][btn] {
+						onRequestButtonPress(&e, floor, elevio.ButtonType(btn))
+						elevatorCh <- e
+					}
+				}
+			}
         case floor := <-drv_floors:
             fmt.Printf("Arrived at floor: %v \n", floor)
             onFloorArrival(&e, floor)
