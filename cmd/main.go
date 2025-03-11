@@ -49,7 +49,7 @@ func main() {
 
 	// FSM and state channels
 	elevatorCh := make(chan elevator.Elevator)
-
+	requestsToLocalChan := make(chan [config.N_FLOORS][config.N_BUTTONS]bool)
 	// Local order channels
 	outgoingOrdersChan := make(chan structs.HallOrder)
 	outgoingElevStateChan := make(chan structs.HRAElevState)
@@ -59,8 +59,9 @@ func main() {
 	incomingNetworkData := make(chan structs.ElevatorDataWithID)
 	outgoingNetworkData := make(chan structs.ElevatorDataWithID)
 
-	// Nil will be swapped out with order later
-	go fsm.Fsm(nil, drv_floors, drv_obstr, drv_stop, elevatorCh)
+	
+
+	go fsm.Fsm(requestsToLocalChan, drv_floors, drv_obstr, drv_stop, elevatorCh)
 
 	go localOrders.LocalStateManager(
 		drv_buttons,
@@ -77,6 +78,7 @@ func main() {
 		completedRequetsChan,
 		incomingNetworkData,
 		outgoingNetworkData,
+		requestsToLocalChan,
 	)
 
 	go broadcastState.BroadcastState(outgoingNetworkData, *broadcastPortFlag)
