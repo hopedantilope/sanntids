@@ -15,9 +15,13 @@ func IsLowestIP(ipList []string, singleIP string) bool {
 		if parsedIP == nil {
 			continue
 		}
-		if parsedIP == singleIP{
+		
+		// Skip if it's the same IP
+		if ip == singleIP {
 			continue
 		}
+		
+		// Compare byte by byte
 		for i := 0; i < 4; i++ {
 			if parsedIP[i] < parsedSingleIP[i] {
 				return false 
