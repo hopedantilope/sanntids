@@ -8,6 +8,12 @@
 f9a10c31
 9
 feedback
+Good modularisation, each module focuses on a single responsibility
+Descriptive names and comments makes the code understandable, however adding some informations to the README would help
+The main function clearly shows what threads and are initialized and how they interact. 
+Good use of structured state objects (ElevatorState, GlobalState ...).
+Some use of global variables, such as in the fsm package where functions directly modify the global variable (elevatorState) instead of using parameters and return values, so they’re not fully pure, though the global state is clearly defined and easy to track.
+Overall is seems to be a robust, peer-to-peer design with clear responsibilities and effective state synchronization.
 
 8b4f9b43
 9
