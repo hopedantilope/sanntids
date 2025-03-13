@@ -7,7 +7,8 @@
 * Code lacks persistent error handeling, wrap in if err != nil { log.Println("Error:", err) }
 * Be consistent with name conventions, you have them mixed up quite a lot e.g newpeer() vs newElevator(), SendMsg() vs sendLifeSignal()).
 * In the timeout() function, readLifeSignals() might try to acqire peersLock, leading to a deadlock, maybe its safer to use defer to assure Unock() is called even if errors occur
-
+* Clean and transparent main.go file, with good channel setup
+* If you dont intent to use the Backup struct in other files, dont make it public by having a capital first letter
 
 f9a10c31
 9
