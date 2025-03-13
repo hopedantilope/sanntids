@@ -1,9 +1,13 @@
 35fd589d
 9
-* Config file should be a go file, not a yaml file
+* Config file should be a go file, not a yaml file if all variables are static
 * Use submodules for driver so that you dont have to link your github
 * The request assigner shouldnt be in the same folder as the single elevator, make a new controller or assigner folder
-* 
+* preferred0rders sorts elevators based on time to Idle, creative and heuristic way to assign orders
+* Code lacks persistent error handeling, wrap in if err != nil { log.Println("Error:", err) }
+* Be consistent with name conventions, you have them mixed up quite a lot e.g newpeer() vs newElevator(), SendMsg() vs sendLifeSignal()).
+* In the timeout() function, readLifeSignals() might try to acqire peersLock, leading to a deadlock, maybe its safer to use defer to assure Unock() is called even if errors occur
+
 
 f9a10c31
 9
