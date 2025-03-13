@@ -1,30 +1,38 @@
 35fd589d
-9
-* Config file should be a go file, not a yaml file
-* Use submodules for driver so that you dont have to link your github
-* The request assigner shouldnt be in the same folder as the single elevator, make a new controller or assigner folder
-* 
+8
+Config file should be a go file, not a yaml file if all variables are static
+Use submodules for driver so that you dont have to link your github
+The request assigner shouldnt be in the same folder as the single elevator, make a new controller or assigner folder
+preferred0rders sorts elevators based on time to Idle, creative and heuristic way to assign orders
+Code lacks persistent error handeling, wrap functions in if err != nil { log.Println("Error:", err) }
+Be consistent with name conventions, you have them mixed up quite a lot e.g newpeer() vs newElevator(), SendMsg() vs sendLifeSignal().
+In the timeout() function, readLifeSignals() might try to acqire peersLock, leading to a deadlock, maybe its safer to use defer to assure Unock() is called even if errors occur
+Clean and transparent main.go file, with good channel setup
+If you dont intent to use the Backup struct in other files, dont make it public by having a capital first letter
 
 f9a10c31
 9
-feedback
-Good modularisation, each module focuses on a single responsibility
-Descriptive names and comments makes the code understandable, however adding some informations to the README would help
-The main function clearly shows what threads and are initialized and how they interact. 
+Good modularization, each module focuses on a single responsibility
+Descriptive names and comments make the code understandable, however adding some information to the README would help
+The main function clearly shows what threads and are being initialized and how they interact. 
 Good use of structured state objects (ElevatorState, GlobalState ...).
 Some use of global variables, such as in the fsm package where functions directly modify the global variable (elevatorState) instead of using parameters and return values, so they’re not fully pure, though the global state is clearly defined and easy to track.
-Overall is seems to be a robust, peer-to-peer design with clear responsibilities and effective state synchronization.
+Overall it seems to be a robust peer-to-peer design with clear responsibilities and effective state synchronization.
 
 8b4f9b43
-9
-feedback
+8
+Inconsistent comments, sometimes no comment other times redundant comments.
+Main function is good entry point to the project, has a good overview of threads and packages
+Good variable names but swap between camel/snake case
+Messy architecture not clear if we are using master or peer to peer, need to make some decisions
+Has a README file with some information, but should be more descriptive
 
 7d915672
-7
-* Should split code into packages, now all the code is in main.go
-* Single letter variable names some places makes it a bit hard to understand
-* Should have a README.md or atleast add how to use the code to doc.txt
-* Suggest using some automatic way of assigning id like either ip-address or pid-id
-* Missing some config to keep track of global variables like numfloor and numbuttons
-* Good use of channels
-* FSM, Requests and elevator.go looks good
+6
+Should split code into packages, now all the code is in main.go making it hard to expand later
+Single letter variable names some places makes it a bit hard to understand
+Should have a README.md or at least add how to use the code to doc.txt
+Suggest using some automatic way of assigning id like either ip-address or pid-id
+Missing some config to keep track of global variables like numfloor and numbuttons
+Good use of channels
+FSM, Requests and elevator.go looks good
