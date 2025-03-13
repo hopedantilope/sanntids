@@ -51,8 +51,8 @@ func main() {
 	elevatorCh := make(chan elevator.Elevator)
 	requestsToLocalChan := make(chan [config.N_FLOORS][config.N_BUTTONS]bool)
 	// Local order channels
-	outgoingOrdersChan := make(chan structs.HallOrder)
-	outgoingElevStateChan := make(chan structs.HRAElevState)
+	outgoingLocalOrdersChan := make(chan structs.HallOrder)
+	outgoingLocalElevStateChan := make(chan structs.HRAElevState)
 	completedRequetsChan := make(chan []elevio.ButtonEvent)
 
 	// Network communication channels
@@ -66,15 +66,15 @@ func main() {
 	go localOrders.LocalStateManager(
 		drv_buttons,
 		elevatorCh,
-		outgoingOrdersChan,
-		outgoingElevStateChan,
+		outgoingLocalOrdersChan,
+		outgoingLocalElevStateChan,
 		completedRequetsChan,
 	)
 
 	go networkOrders.NetworkOrderManager(
 		*elevatorID,
-		outgoingElevStateChan,
-		outgoingOrdersChan,
+		outgoingLocalElevStateChan,
+		outgoingLocalOrdersChan,
 		completedRequetsChan,
 		incomingNetworkData,
 		outgoingNetworkData,
