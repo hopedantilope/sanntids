@@ -17,7 +17,7 @@ func Eb_toString(eb ElevatorBehaviour) string {
     case EB_Idle:
         return "idle"
     case EB_DoorOpen:
-        return "door open"
+        return "doorOpen"
     case EB_Moving:
         return "moving"
     default:
@@ -28,9 +28,9 @@ func Eb_toString(eb ElevatorBehaviour) string {
 func Md_toString(md elevio.MotorDirection) string {
     switch md {
     case elevio.MD_Up:
-        return "Up"
+        return "up"
     case elevio.MD_Down:
-        return "Down"
+        return "down"
     case elevio.MD_Stop:
         return "stop"
     default:
