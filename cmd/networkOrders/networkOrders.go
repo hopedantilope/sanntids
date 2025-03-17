@@ -37,26 +37,10 @@ func NetworkOrderManager(
 		case <-transmitTicker.C:
 			currentTime := time.Now()
 			for ip, lastSeen := range ipMap {
-				fmt.Printf("here")
 				// If we haven't received an update in 2 seconds, remove the IP
 				if currentTime.Sub(lastSeen) > 2*time.Second {
 					delete(ipMap, ip)
 					delete(elevatorStates, ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-					fmt.Printf("Removed stale connection: %s\n", ip)
-
 				}
 			}
 			sendNetworkData(localElevatorID, elevatorStates, hallOrders, outgoingDataChan, ipMap)
@@ -73,12 +57,6 @@ func NetworkOrderManager(
 
 			for key := range ipMap {
 				ipList = append(ipList, key)
-			}
-			//
-
-			// Skip processing our own messages
-			if incomingData.ElevatorID == localElevatorID {
-				continue
 			}
 
 			// Update state map with received data
