@@ -98,15 +98,11 @@ func TransformFromHRA(assignedOrders map[string][config.N_FLOORS][2]bool, states
 }
 
 func TransformToHRA(elevData structs.ElevatorDataWithID) (map[string]structs.HRAElevState, [config.N_FLOORS][2]bool) {
-	// Initialize empty hall requests 2D array
 	hallrequests := [config.N_FLOORS][2]bool{}
 
-	// Process each hall order in the elevator data
-	for _, order := range elevData.HallOrders {
+	for _,order := range elevData.HallOrders{
 		orderFloor := order.Floor
 		orderDirection := order.Dir
-		
-		// Set appropriate hall request flag based on direction
 		if orderDirection == elevio.BT_HallDown {
 			hallrequests[orderFloor][0] = true
 		}	
@@ -114,23 +110,6 @@ func TransformToHRA(elevData structs.ElevatorDataWithID) (map[string]structs.HRA
 			hallrequests[orderFloor][1] = true
 		}
 	}
-	
-	// Debug printing of elevator states
-	fmt.Println("=== DEBUG: Elevator States for HRA ===")
-	
-	for _, state := range elevData.ElevatorState {
-		fmt.Printf("  Behavior: %s\n", state.Behavior)
-		fmt.Printf("  Floor: %d\n", state.Floor)
-		fmt.Printf("  Direction: %s\n", state.Direction)
-		fmt.Printf("  CabRequests: %v\n", state.CabRequests)
-	}
-	
-	fmt.Println("Hall Requests:")
-	for floor := 0; floor < len(hallrequests); floor++ {
-		fmt.Printf("  Floor %d: Down=%t, Up=%t\n", floor, hallrequests[floor][0], hallrequests[floor][1])
-	}
-	fmt.Println("=====================================")
-	
-	// Return elevator state map and hall requests array
 	return elevData.ElevatorState, hallrequests
+
 }
