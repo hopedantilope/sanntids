@@ -264,11 +264,11 @@ func getMyRequests(elevatorData structs.ElevatorDataWithID, myID string) [config
     }
 
     if state, ok := elevatorData.ElevatorState[myID]; ok {
-        for floor, requested := range state.CabRequests {
-            if requested {
-                orders[floor][elevator.BT_Cab] = true
-            }
-        }
+		for floorIndex := 0; floorIndex < len(state.CabRequests); floorIndex++ {
+			if state.CabRequests[floorIndex] {
+				orders[floorIndex][elevator.BT_Cab] = true
+			}
+		}
     }
 
     return orders
