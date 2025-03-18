@@ -41,7 +41,7 @@ func LocalStateManager(
 				if request.Floor >= 0 && request.Floor < config.N_FLOORS {
 					cabRequests[request.Floor] = true
 					currentState.CabRequests = cabRequests
-					fmt.Println("Sending updated elevator state (cab request updated):", currentState)
+					//fmt.Println("Sending updated elevator state (cab request updated):", currentState)
 					outgoingElevStateChan <- currentState
 				}
 
@@ -69,7 +69,7 @@ func LocalStateManager(
 				fmt.Println("Sending completed hall requests:", completedRequests)
 				completedRequetsChan <- completedRequests
 			}
-			fmt.Println("Sending updated elevator state (elevator update):", currentState)
+			//fmt.Println("Sending updated elevator state (elevator update):", currentState)
 			outgoingElevStateChan <- currentState
 		}
 	}
