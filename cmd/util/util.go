@@ -2,6 +2,7 @@ package util
 
 import (
 	"net"
+	"time"
 )
 
 func IsLowestIP(ipList []string, singleIP string) bool {
@@ -32,4 +33,16 @@ func IsLowestIP(ipList []string, singleIP string) bool {
 	}
 
 	return true
+}
+
+
+
+func IsMaster(ipMap map[string]time.Time, singleIP string) bool {
+
+	ipList := make([]string, 0, len(ipMap))
+	for nodeID := range ipMap {
+		ipList = append(ipList, nodeID)
+	}
+
+	return IsLowestIP(ipList, singleIP)
 }

@@ -91,20 +91,16 @@ func NetworkOrderManager(
 							if util.IsLowestIP(ipList, localElevatorID) {
 								switch newOrder.Status {
 								case structs.New:
-									if order.Status == structs.Completed {
+									if order.Status == structs.Completed && order.DelegatedID == incomingData.ElevatorID{
 										hallOrders[i].Status = newOrder.Status
 										hallOrders[i].DelegatedID = newOrder.DelegatedID
 									}
 								case structs.Assigned:
-									//Maybe do something like this?
-									//Add id to list of elevetors that knows about the order
-									//If every alive elevator knows about the order, set status to confirmed
-									//Turn on lights
-
+									//Do nothing
 								case structs.Confirmed:
 									//Do nothing
 								case structs.Completed:
-									if order.Status != structs.New {
+									if order.Status != structs.New && order.DelegatedID == incomingData.ElevatorID{
 										hallOrders[i].Status = newOrder.Status
 										hallOrders[i].DelegatedID = newOrder.DelegatedID
 									}
@@ -152,10 +148,6 @@ func NetworkOrderManager(
 			for _, req := range completedReqs {
 				hallOrders = UpdateOrderStatus(hallOrders, req.Floor, int(req.Button), structs.Completed)
 			}
-
-			// Remove completed orders after a reasonable delay
-			// Consider implementing a cleanup mechanism here or periodically
-			hallOrders = RemoveCompletedOrders(hallOrders)
 		}
 	}
 }
@@ -248,26 +240,6 @@ func UpdateOrderStatus(orders []structs.HallOrder, floor int, dir int, newStatus
 	return orders
 }
 
-// RemoveCompletedOrders removes orders with Completed status from the order list
-func RemoveCompletedOrders(orders []structs.HallOrder) []structs.HallOrder {
-	result := make([]structs.HallOrder, 0)
-	removed := 0
-
-	for _, order := range orders {
-		if order.Status != structs.Completed {
-			result = append(result, order)
-		} else {
-			removed++
-		}
-	}
-
-	if removed > 0 {
-		fmt.Printf("Removed %d completed orders\n", removed)
-	}
-
-	return result
-}
-
 // assignOrders checks if the local elevator is the master and
 // assigns orders accordingly using the runHRA package.
 func assignOrders(data structs.ElevatorDataWithID, ipMap map[string]time.Time, localID string) structs.ElevatorDataWithID {
@@ -286,7 +258,7 @@ func getMyRequests(elevatorData structs.ElevatorDataWithID, myID string) [config
     var orders [config.N_FLOORS][config.N_BUTTONS]bool
 
     for _, order := range elevatorData.HallOrders {
-        if order.DelegatedID == myID && order.Status == structs.Confirmed {
+        if order.DelegatedID == myID && order.Status == structs.Assigned {
             orders[order.Floor][order.Dir] = true
         }
     }
