@@ -28,7 +28,7 @@ func NetworkOrderManager(
 	ipMap := make(map[string]time.Time, 0)
     var prevRequests [config.N_FLOORS][config.N_BUTTONS]bool
 	// Create a ticker that periodically sends network data
-	transmitTicker := time.NewTicker(500 * time.Millisecond)
+	transmitTicker := time.NewTicker(1000 * time.Millisecond)
 	defer transmitTicker.Stop()
 
 	for {
@@ -38,7 +38,7 @@ func NetworkOrderManager(
 			currentTime := time.Now()
 			for ip, lastSeen := range ipMap {
 				// If we haven't received an update in 2 seconds, remove the IP
-				if currentTime.Sub(lastSeen) > 2*time.Second {
+				if currentTime.Sub(lastSeen) > 4*time.Second {
 					delete(ipMap, ip)
 					delete(elevatorStates, ip)
 				}
@@ -65,14 +65,6 @@ func NetworkOrderManager(
 					elevatorStates[id] = state
 				}
 			}
-
-            //Get the requests assigned to localID and send them to Elevator
-            myRequests := getMyRequests(incomingData, localElevatorID)
-            if myRequests != prevRequests {
-                requestsToLocalChan <- myRequests
-                prevRequests = myRequests
-            }
-
 			// Process incoming hall orders
 			for _, newOrder := range incomingData.HallOrders {
 				if !isDuplicateOrder(hallOrders, newOrder) {
@@ -111,6 +103,14 @@ func NetworkOrderManager(
 					}
 				}
 			}
+
+			//Get the requests assigned to localID and send them to Elevator
+			myRequests := getMyRequests(hallOrders, elevatorStates, localElevatorID)
+			if myRequests != prevRequests {
+				requestsToLocalChan <- myRequests
+				prevRequests = myRequests
+			}
+
 		// Update local elevator state
 		case localState, ok := <-localElevStateChan:
 			if !ok {
@@ -243,27 +243,44 @@ func UpdateOrderStatus(orders []structs.HallOrder, floor int, dir int, newStatus
 // assignOrders checks if the local elevator is the master and
 // assigns orders accordingly using the runHRA package.
 func assignOrders(data structs.ElevatorDataWithID, ipMap map[string]time.Time, localID string) structs.ElevatorDataWithID {
-	ipList := make([]string, 0, len(ipMap))
-	for key := range ipMap {
-		ipList = append(ipList, key)
-	}
-	if util.IsLowestIP(ipList, localID) {
-		data = runHRA.RunHRA(data)
+	if util.IsMaster(ipMap, localID) {
+		// Split orders into pending and completed
+		var pendingOrders []structs.HallOrder
+		var completedOrders []structs.HallOrder
+		for _, order := range data.HallOrders {
+			if order.Status == structs.Completed {
+				completedOrders = append(completedOrders, order)
+			} else {
+				pendingOrders = append(pendingOrders, order)
+			}
+		}
+		
+		// Create a new data object with only pending orders for runHRA
+		dataForHRA := data
+		dataForHRA.HallOrders = pendingOrders
+
+		// Run HRA on the pending orders only
+		newData := runHRA.RunHRA(dataForHRA)
+		
+		// Merge the completed orders back into the HRA result
+		newData.HallOrders = append(newData.HallOrders, completedOrders...)
+		data = newData
 	}
 	return data
 }
 
 
-func getMyRequests(elevatorData structs.ElevatorDataWithID, myID string) [config.N_FLOORS][config.N_BUTTONS]bool {
+
+func getMyRequests(hallOrders []structs.HallOrder, elevatorStates map[string]structs.HRAElevState, myID string) [config.N_FLOORS][config.N_BUTTONS]bool {
     var orders [config.N_FLOORS][config.N_BUTTONS]bool
 
-    for _, order := range elevatorData.HallOrders {
+    for _, order := range hallOrders {
         if order.DelegatedID == myID && order.Status == structs.Assigned {
             orders[order.Floor][order.Dir] = true
         }
     }
 
-    if state, ok := elevatorData.ElevatorState[myID]; ok {
+    if state, ok := elevatorStates[myID]; ok {
 		for floorIndex := 0; floorIndex < len(state.CabRequests); floorIndex++ {
 			if state.CabRequests[floorIndex] {
 				orders[floorIndex][elevator.BT_Cab] = true
