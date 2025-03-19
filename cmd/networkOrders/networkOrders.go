@@ -83,10 +83,11 @@ func NetworkOrderManager(
 							// Accept everthing the master says:
 							if util.IsLowestIP(ipList, incomingData.ElevatorID) {
 								//Send FSM
-								if order.Status != structs.New && newOrder.Status != structs.Completed {
-									hallOrders[i].Status = newOrder.Status
-									hallOrders[i].DelegatedID = newOrder.DelegatedID
+								if order.Status == structs.New && newOrder.Status == structs.Completed {
+									continue
 								}
+								hallOrders[i].Status = newOrder.Status
+								hallOrders[i].DelegatedID = newOrder.DelegatedID
 							}
 							// The master should only accept certain orders:
 							if util.IsLowestIP(ipList, localElevatorID) {
