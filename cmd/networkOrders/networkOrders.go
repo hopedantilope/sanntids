@@ -25,6 +25,7 @@ func NetworkOrderManager(
 	// Initialize data stores
 	elevatorStates := make(map[string]structs.HRAElevState)
 	hallOrders := make([]structs.HallOrder, 0)
+	hallOrdersMap := make(map[string][]structs.HallOrder, 0)
 	ipMap := make(map[string]time.Time, 0)
     var prevRequests [config.N_FLOORS][config.N_BUTTONS]bool
 	// Create a ticker that periodically sends network data
@@ -41,7 +42,11 @@ func NetworkOrderManager(
 				if currentTime.Sub(lastSeen) > 4*time.Second {
 					delete(ipMap, ip)
 					delete(elevatorStates, ip)
+					delete(hallOrdersMap, ip)
 				}
+			}
+			if util.IsMaster(ipMap, localElevatorID) {
+				hallOrders = applyNewOrderBarrier(hallOrders, hallOrdersMap, ipMap)
 			}
 			sendNetworkData(localElevatorID, elevatorStates, hallOrders, outgoingDataChan, ipMap)
 
@@ -53,6 +58,8 @@ func NetworkOrderManager(
 
             //Change this:
 			ipMap[incomingData.ElevatorID] = time.Now()
+			hallOrdersMap[incomingData.ElevatorID] = incomingData.HallOrders
+
 			ipList := make([]string, 0, len(ipMap))
 
 			for key := range ipMap {
@@ -217,10 +224,10 @@ func sendNetworkData(
 		HallOrders:    ordersCopy,
 	}
 
-	//The master assigns orders here
-	networkData = assignOrders(networkData, ipMap, localID)
-
-	// Use non-blocking send to avoid deadlocks
+	if util.IsMaster(ipMap, localID) {
+		networkData = assignOrders(networkData)
+	}
+	// Use non-blocking send to avoid dealocks
 	select {
 	case outChan <- networkData:
 		fmt.Println("  Successfully sent network data")
@@ -242,33 +249,71 @@ func UpdateOrderStatus(orders []structs.HallOrder, floor int, dir int, newStatus
 
 // assignOrders checks if the local elevator is the master and
 // assigns orders accordingly using the runHRA package.
-func assignOrders(data structs.ElevatorDataWithID, ipMap map[string]time.Time, localID string) structs.ElevatorDataWithID {
-	if util.IsMaster(ipMap, localID) {
-		// Split orders into pending and completed
-		var pendingOrders []structs.HallOrder
-		var completedOrders []structs.HallOrder
-		for _, order := range data.HallOrders {
-			if order.Status == structs.Completed {
-				completedOrders = append(completedOrders, order)
-			} else {
-				pendingOrders = append(pendingOrders, order)
-			}
-		}
-		
-		// Create a new data object with only pending orders for runHRA
-		dataForHRA := data
-		dataForHRA.HallOrders = pendingOrders
+func assignOrders(data structs.ElevatorDataWithID) structs.ElevatorDataWithID {
+    // Split orders into pending and completed.
+    var pendingOrders []structs.HallOrder
+    var nonPendingOrders []structs.HallOrder
+    for _, order := range data.HallOrders {
+        if order.Status == structs.Completed || order.Status == structs.New{
+            nonPendingOrders = append(nonPendingOrders, order)
+        } else {
+            pendingOrders = append(pendingOrders, order)
+        }
+    }
 
-		// Run HRA on the pending orders only
-		newData := runHRA.RunHRA(dataForHRA)
-		
-		// Merge the completed orders back into the HRA result
-		newData.HallOrders = append(newData.HallOrders, completedOrders...)
-		data = newData
-	}
-	return data
+    // Create a new data object with only pending orders for runHRA.
+    dataForHRA := data
+    dataForHRA.HallOrders = pendingOrders
+
+    // Run HRA on the pending orders.
+    newData := runHRA.RunHRA(dataForHRA)
+
+    // Merge the completed orders back into the HRA result.
+    newData.HallOrders = append(newData.HallOrders, nonPendingOrders...)
+    return newData
 }
 
+
+// orderKnownByAll returns true if every active node (from ipList)
+// has an order with the same Floor and Dir that is still marked as New (or already Confirmed)
+func orderKnownByAll(order structs.HallOrder, hallOrdersMap map[string][]structs.HallOrder, ipList []string) bool {
+    for _, nodeID := range ipList {
+        orders, exists := hallOrdersMap[nodeID]
+        if !exists {
+            return false
+        }
+        found := false
+        for _, o := range orders {
+            if o.Floor == order.Floor && o.Dir == order.Dir &&
+                (o.Status == structs.New || o.Status == structs.Confirmed) {
+                found = true
+                break
+            }
+        }
+        if !found {
+            return false
+        }
+    }
+    return true
+}
+
+func applyNewOrderBarrier(orders []structs.HallOrder, hallOrdersMap map[string][]structs.HallOrder, ipMap map[string]time.Time) []structs.HallOrder {
+    // Build a list of active node IDs from ipMap
+    ipList := make([]string, 0, len(ipMap))
+    for nodeID := range ipMap {
+        ipList = append(ipList, nodeID)
+    }
+    // Check each new order
+    for i, order := range orders {
+        if order.Status == structs.New {
+            if orderKnownByAll(order, hallOrdersMap, ipList) {
+                // All nodes agree the order exists – barrier passed.
+                orders[i].Status = structs.Confirmed
+            }
+        }
+    }
+    return orders
+}
 
 
 func getMyRequests(hallOrders []structs.HallOrder, elevatorStates map[string]structs.HRAElevState, myID string) [config.N_FLOORS][config.N_BUTTONS]bool {
