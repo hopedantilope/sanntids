@@ -9,8 +9,8 @@ type OrderStatus int
 const (
 	Unknown OrderStatus = iota - 1
 	New
-	Assigned
 	Confirmed
+	Assigned
 	Completed
 )
 

@@ -14,6 +14,7 @@ const (
     EB_Idle ElevatorBehaviour = iota
     EB_DoorOpen
     EB_Moving
+    EB_Obstruction
 )
 
 func Eb_toString(eb ElevatorBehaviour) string {

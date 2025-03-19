@@ -9,11 +9,9 @@ import (
 	"sanntids/cmd/localElevator/timer"
 )
 
-func setAllLights(e elevator.Elevator) {
+func setAllCabLights(e elevator.Elevator) {
 	for floor := 0; floor < config.N_FLOORS; floor++ {
-		for btn := 0; btn < config.N_BUTTONS; btn++ {
-			elevio.SetButtonLamp(elevio.ButtonType(btn), floor, e.Requests[floor][btn])
-		}
+		elevio.SetButtonLamp(elevio.ButtonType(elevator.BT_Cab), floor, e.Requests[floor][elevator.BT_Cab])
 	}
 }
 
@@ -71,7 +69,7 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
 		}
 	}
 
-	setAllLights(*el)
+	setAllCabLights(*el)
 }
 
 
@@ -90,7 +88,7 @@ func onFloorArrival(el *elevator.Elevator, newFloor int) {
 			el.Cleared = cleared
 			*el = requests.Requests_clearAtCurrentFloor(*el)
 			timer.TimerStart(el.Config.DoorOpenDuration_s)
-			setAllLights(*el)
+			setAllCabLights(*el)
 			el.Behaviour = elevator.EB_DoorOpen
 		}
 	default:
@@ -111,7 +109,7 @@ func onDoorTimeout(el *elevator.Elevator) {
 		case elevator.EB_DoorOpen:
 			timer.TimerStart(el.Config.DoorOpenDuration_s)
 			*el = requests.Requests_clearAtCurrentFloor(*el)
-			setAllLights(*el)
+			setAllCabLights(*el)
 
 		case elevator.EB_Moving, elevator.EB_Idle:
 			elevio.SetDoorOpenLamp(false)
@@ -146,7 +144,7 @@ func Fsm(
     e := elevator.ElevatorInit()
 	elevatorCh <- e
 
-    setAllLights(e)
+    setAllCabLights(e)
     elevio.SetFloorIndicator(0)
     elevio.SetDoorOpenLamp(false)
     moveToFirstFloor(drv_floors)

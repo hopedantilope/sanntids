@@ -227,6 +227,7 @@ func sendNetworkData(
 	if util.IsMaster(ipMap, localID) {
 		networkData = assignOrders(networkData)
 	}
+	setAllLights(networkData)
 	// Use non-blocking send to avoid dealocks
 	select {
 	case outChan <- networkData:
@@ -267,7 +268,6 @@ func assignOrders(data structs.ElevatorDataWithID) structs.ElevatorDataWithID {
 
     // Run HRA on the pending orders.
     newData := runHRA.RunHRA(dataForHRA)
-
     // Merge the completed orders back into the HRA result.
     newData.HallOrders = append(newData.HallOrders, nonPendingOrders...)
     return newData
@@ -336,3 +336,21 @@ func getMyRequests(hallOrders []structs.HallOrder, elevatorStates map[string]str
     return orders
 }
 
+
+func setAllLights(data structs.ElevatorDataWithID) {
+	var hallLightsOn [config.N_FLOORS][2]bool
+
+	for _, order := range data.HallOrders {
+		buttonType := int(order.Dir)
+		if buttonType == int(elevio.BT_HallUp) || buttonType == int(elevio.BT_HallDown) {
+			if order.Status == structs.Confirmed || order.Status == structs.Assigned {
+				hallLightsOn[order.Floor][buttonType] = true
+			}
+		}
+	}
+
+	for floor := 0; floor < config.N_FLOORS; floor++ {
+		elevio.SetButtonLamp(elevio.BT_HallUp, floor, hallLightsOn[floor][int(elevio.BT_HallUp)])
+		elevio.SetButtonLamp(elevio.BT_HallDown, floor, hallLightsOn[floor][int(elevio.BT_HallDown)])
+	}
+}
