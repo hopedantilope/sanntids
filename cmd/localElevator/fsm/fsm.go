@@ -108,6 +108,8 @@ func onDoorTimeout(el *elevator.Elevator) {
 		switch el.Behaviour {
 		case elevator.EB_DoorOpen:
 			timer.TimerStart(el.Config.DoorOpenDuration_s)
+			cleared := requests.Requests_getClearedAtCurrentFloor(*el)
+			el.Cleared = cleared
 			*el = requests.Requests_clearAtCurrentFloor(*el)
 			setAllCabLights(*el)
 
