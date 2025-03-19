@@ -29,7 +29,7 @@ func NetworkOrderManager(
 	ipMap := make(map[string]time.Time, 0)
     var prevRequests [config.N_FLOORS][config.N_BUTTONS]bool
 	// Create a ticker that periodically sends network data
-	transmitTicker := time.NewTicker(1000 * time.Millisecond)
+	transmitTicker := time.NewTicker(config.TransmitTickerMs * time.Millisecond)
 	defer transmitTicker.Stop()
 
 	for {
@@ -39,7 +39,7 @@ func NetworkOrderManager(
 			currentTime := time.Now()
 			for ip, lastSeen := range ipMap {
 				// If we haven't received an update in 2 seconds, remove the IP
-				if currentTime.Sub(lastSeen) > 4*time.Second {
+				if currentTime.Sub(lastSeen) > config.ElevatorTimeoutMs*time.Second {
 					delete(ipMap, ip)
 					delete(elevatorStates, ip)
 					delete(hallOrdersMap, ip)
