@@ -30,24 +30,28 @@ func moveToFirstFloor(floor <-chan int) {
 	}
 }
 
-func onRequestButtonPress(el *elevator.Elevator, btnFloor int, btnType elevio.ButtonType) {
 
+func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][config.N_BUTTONS]bool) {
+	el.Requests = newRequests
 	switch el.Behaviour {
 	case elevator.EB_DoorOpen:
-		if requests.Requests_shouldClearImmediately(*el, btnFloor, btnType) {
-			var cleared [config.N_FLOORS][config.N_BUTTONS]bool
-			cleared[btnFloor][btnType] = true
-			el.Cleared = cleared
-			timer.TimerStart(el.Config.DoorOpenDuration_s)
-		} else {
-			el.Requests[btnFloor][btnType] = true
-		}
+		var zeros [config.N_FLOORS][config.N_BUTTONS]bool
+		el.Cleared = zeros
+        for floor := 0; floor < config.N_FLOORS; floor++ {
+            for btnType := 0; btnType < config.N_BUTTONS; btnType++ {
+                if newRequests[floor][btnType] {
+                    if requests.Requests_shouldClearImmediately(*el, floor, elevio.ButtonType(btnType)) {
+                        el.Cleared[floor][btnType] = true
+                        timer.TimerStart(el.Config.DoorOpenDuration_s)
+                    }
+                }
+            }
+        }
 
 	case elevator.EB_Moving:
-		el.Requests[btnFloor][btnType] = true
+		// Do nothing
 
 	case elevator.EB_Idle:
-		el.Requests[btnFloor][btnType] = true
 		pair := requests.Requests_chooseDirection(*el)
 		el.MotorDirection = pair.MotorDirection
 		el.Behaviour = pair.Behaviour
@@ -55,6 +59,8 @@ func onRequestButtonPress(el *elevator.Elevator, btnFloor int, btnType elevio.Bu
 		case elevator.EB_DoorOpen:
 			elevio.SetDoorOpenLamp(true)
 			timer.TimerStart(el.Config.DoorOpenDuration_s)
+			cleared := requests.Requests_getClearedAtCurrentFloor(*el)
+			el.Cleared = cleared
 			*el = requests.Requests_clearAtCurrentFloor(*el)
 
 		case elevator.EB_Moving:
@@ -67,6 +73,7 @@ func onRequestButtonPress(el *elevator.Elevator, btnFloor int, btnType elevio.Bu
 
 	setAllLights(*el)
 }
+
 
 func onFloorArrival(el *elevator.Elevator, newFloor int) {
 
@@ -147,17 +154,11 @@ func Fsm(
 
     for {
         select {
-        case requests := <-drv_buttons:
-            fmt.Println("Button pressed")
-			//Should proabaly change this
-			for floor := 0; floor < config.N_FLOORS; floor++ {
-				for btn := 0; btn < config.N_BUTTONS; btn++ {
-					if requests[floor][btn] {
-						onRequestButtonPress(&e, floor, elevio.ButtonType(btn))
-						elevatorCh <- e
-					}
-				}
-			}
+        case newRequests := <-drv_buttons:
+            fmt.Println("Got some new requests")
+			onRequestsUpdate(&e, newRequests)
+			elevatorCh <- e
+
         case floor := <-drv_floors:
             fmt.Printf("Arrived at floor: %v \n", floor)
             onFloorArrival(&e, floor)
