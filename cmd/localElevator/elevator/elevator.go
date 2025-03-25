@@ -100,14 +100,6 @@ func LoadCabRequests() []bool {
     return cabRequests
 }
 
-type Button int
-const (
-    BT_HallUp   Button = iota
-    BT_HallDown
-    BT_Cab
-    N_BUTTONS // This will be 3
-)
-
 type Elevator struct {
     Floor     int
     MotorDirection      elevio.MotorDirection
@@ -146,7 +138,7 @@ func ElevatorInit() Elevator {
     
     // Apply the loaded cab requests to the elevator
     for floor, isRequested := range savedCabRequests {
-        e.Requests[floor][BT_Cab] = isRequested
+        e.Requests[floor][elevio.BT_Cab] = isRequested
     }
 
     return e

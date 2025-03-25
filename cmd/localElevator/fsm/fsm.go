@@ -11,7 +11,7 @@ import (
 
 func setAllCabLights(e elevator.Elevator) {
 	for floor := 0; floor < config.N_FLOORS; floor++ {
-		elevio.SetButtonLamp(elevio.ButtonType(elevator.BT_Cab), floor, e.Requests[floor][elevator.BT_Cab])
+		elevio.SetButtonLamp(elevio.ButtonType(elevio.BT_Cab), floor, e.Requests[floor][elevio.BT_Cab])
 	}
 }
 

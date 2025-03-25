@@ -4,7 +4,6 @@ import (
 	"Driver-go/elevio"
 	"fmt"
 	"sanntids/cmd/localElevator/config"
-	"sanntids/cmd/localElevator/elevator"
 	"sanntids/cmd/localElevator/structs"
 	"sanntids/cmd/runHRA"
 	"sanntids/cmd/util"
@@ -340,7 +339,7 @@ func getMyRequests(hallOrders []structs.HallOrder, elevatorStates map[string]str
     if state, ok := elevatorStates[myID]; ok {
 		for floorIndex := 0; floorIndex < len(state.CabRequests); floorIndex++ {
 			if state.CabRequests[floorIndex] {
-				orders[floorIndex][elevator.BT_Cab] = true
+				orders[floorIndex][elevio.BT_Cab] = true
 			}
 		}
     }
