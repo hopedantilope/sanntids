@@ -60,7 +60,7 @@ func main() {
 	incomingNetworkData := make(chan structs.ElevatorDataWithID)
 	outgoingNetworkData := make(chan structs.ElevatorDataWithID)
 
-	go fsm.Fsm(requestsToLocalChan, drv_floors, drv_obstr, drv_stop, elevatorCh)
+	go fsm.Fsm(requestsToLocalChan, drvFloors, drvObstr, drvStop, elevatorCh)
 
 	go localStates.LocalStateManager(
 		drvButtons,
