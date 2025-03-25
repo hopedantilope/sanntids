@@ -78,10 +78,14 @@ func NetworkOrderManager(
 						if order.Floor == newOrder.Floor && order.Dir == newOrder.Dir {
 							// Handle messages from the master:
 							if util.IsMaster(ipMap, incomingData.ElevatorID) {
-								if !(order.Status == structs.New && newOrder.Status == structs.Completed) {
-									hallOrders[i].Status = newOrder.Status
-									hallOrders[i].DelegatedID = newOrder.DelegatedID
+								if order.Status == structs.New && newOrder.Status == structs.Completed {
+									continue
 								}
+								if order.Status == structs.Assigned && newOrder.Status == structs.Completed {
+									continue
+								}
+								hallOrders[i].Status = newOrder.Status
+								hallOrders[i].DelegatedID = newOrder.DelegatedID
 							}
 							// The master should only accept certain orders:
 							if util.IsMaster(ipMap, localElevatorID) {
