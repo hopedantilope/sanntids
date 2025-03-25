@@ -9,7 +9,7 @@ import (
 	"sanntids/cmd/localElevator/elevator"
 	"sanntids/cmd/localElevator/fsm"
 	"sanntids/cmd/localElevator/structs"
-	"sanntids/cmd/localOrders"
+	"sanntids/cmd/localStates"
 	"sanntids/cmd/broadcastState"
 	"sanntids/cmd/networkOrders"
 )
@@ -50,7 +50,8 @@ func main() {
 	// FSM and state channels
 	elevatorCh := make(chan elevator.Elevator)
 	requestsToLocalChan := make(chan [config.N_FLOORS][config.N_BUTTONS]bool)
-	// Local order channels
+
+	// Local channels
 	outgoingLocalOrdersChan := make(chan structs.HallOrder)
 	outgoingLocalElevStateChan := make(chan structs.HRAElevState)
 	completedRequetsChan := make(chan []elevio.ButtonEvent)
@@ -59,11 +60,9 @@ func main() {
 	incomingNetworkData := make(chan structs.ElevatorDataWithID)
 	outgoingNetworkData := make(chan structs.ElevatorDataWithID)
 
-	
-
 	go fsm.Fsm(requestsToLocalChan, drv_floors, drv_obstr, drv_stop, elevatorCh)
 
-	go localOrders.LocalStateManager(
+	go localStates.LocalStateManager(
 		drv_buttons,
 		elevatorCh,
 		outgoingLocalOrdersChan,
