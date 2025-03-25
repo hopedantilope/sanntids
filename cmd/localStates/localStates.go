@@ -1,4 +1,4 @@
-package localOrders
+package localStates
 
 import (
 	"Driver-go/elevio"
@@ -8,22 +8,18 @@ import (
 	"fmt"
 )
 
-// LocalStateManager listens for button events.
-// For BT_Cab events, it updates the CabRequestList and includes it in the HRAElevState.
-// For hall events, it sends back a new HallOrder via outgoingOrdersChan.
 func LocalStateManager(
 	localRequest <-chan elevio.ButtonEvent,
 	elevatorCh <-chan elevator.Elevator,
 	outgoingOrdersChan chan<- structs.HallOrder,
 	outgoingElevStateChan chan<- structs.HRAElevState,
 	completedRequetsChan chan<- []elevio.ButtonEvent) {
-	// Initialize the cab request list as an array to false
+
 	cabRequests := make([]bool, config.N_FLOORS)
 	for i := range cabRequests {
 		cabRequests[i] = false
 	}
 
-	// Initialize with default values
 	currentState := structs.HRAElevState{
 		Behavior:    "idle",
 		Floor:       0,
@@ -36,7 +32,6 @@ func LocalStateManager(
 	for {
 		select {
 		case request := <-localRequest:
-			// Handle cab button press
 			if request.Button == elevio.BT_Cab {
 				if request.Floor >= 0 && request.Floor < config.N_FLOORS {
 					currentState.CabRequests[request.Floor] = true
@@ -44,7 +39,6 @@ func LocalStateManager(
 				}
 
 			} else if !e.Requests[request.Floor][request.Button] {
-				// For hall button events, create and send a new HallOrder
 				newOrder := structs.HallOrder{
 					Status:      structs.New,
 					DelegatedID: "undelegated",
@@ -60,9 +54,7 @@ func LocalStateManager(
 			currentState.Floor = e.Floor
 			currentState.Direction = elevator.Md_toString(e.MotorDirection)
 			currentState.Obstruction = e.Obstruction
-			// To make sure completed cab requests gets reset to false:
 			currentState.CabRequests = elevator.GetCabRequests(e.Requests)
-			//Sending completed requets to a channel
 			completedRequests := getClearedHallRequests(e.Cleared)
 			if len(completedRequests) > 0 {
 				fmt.Println("Sending completed hall requests:", completedRequests)

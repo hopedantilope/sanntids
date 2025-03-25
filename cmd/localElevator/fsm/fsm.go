@@ -40,6 +40,7 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
                 if newRequests[floor][btnType] {
                     if requests.RequestsShouldClearImmediately(*el, floor, elevio.ButtonType(btnType)) {
                         el.Cleared[floor][btnType] = true
+						el.Requests[floor][btnType] = false
                         timer.TimerStart(el.Config.DoorOpenDuration_s)
                     }
                 }

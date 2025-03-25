@@ -27,7 +27,7 @@ func NetworkOrderManager(
 	hallOrdersMap := make(map[string][]structs.HallOrder, 0)
 	ipMap := make(map[string]time.Time, 0)
     var prevRequests [config.N_FLOORS][config.N_BUTTONS]bool
-	// Create a ticker that periodically sends network data
+
 	transmitTicker := time.NewTicker(config.TransmitTickerMs * time.Millisecond)
 	defer transmitTicker.Stop()
 
@@ -59,12 +59,6 @@ func NetworkOrderManager(
 			ipMap[incomingData.ElevatorID] = time.Now()
 			hallOrdersMap[incomingData.ElevatorID] = incomingData.HallOrders
 
-			ipList := make([]string, 0, len(ipMap))
-
-			for key := range ipMap {
-				ipList = append(ipList, key)
-			}
-
 			// Update state map with received data
 			for id, state := range incomingData.ElevatorState {
 				if incomingData.ElevatorID == id {
@@ -79,9 +73,8 @@ func NetworkOrderManager(
 					// Update existing order if necessary
 					for i, order := range hallOrders {
 						if order.Floor == newOrder.Floor && order.Dir == newOrder.Dir {
-							// Accept everthing the master says:
+							// Handle messages from the master:
 							if util.IsMaster(ipMap, incomingData.ElevatorID) {
-								//Send FSM
 								if order.Status == structs.New && newOrder.Status == structs.Completed {
 									continue
 								}
@@ -228,7 +221,7 @@ func sendNetworkData(
 		networkData = assignOrders(networkData)
 	}
 	setAllLights(networkData)
-	// Use non-blocking send to avoid dealocks
+
 	select {
 	case outChan <- networkData:
 		fmt.Println("  Successfully sent network data")
@@ -283,7 +276,7 @@ func assignOrders(data structs.ElevatorDataWithID) structs.ElevatorDataWithID {
 }
 
 
-// orderKnownByAll returns true if every active node (from ipList)
+// orderKnownByAll returns true if every active node
 // has an order with the same Floor and Dir that is still marked as New (or already Confirmed)
 func orderKnownByAll(order structs.HallOrder, hallOrdersMap map[string][]structs.HallOrder, ipList []string) bool {
     for _, nodeID := range ipList {
