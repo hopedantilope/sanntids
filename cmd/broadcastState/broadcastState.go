@@ -2,7 +2,7 @@ package broadcastState
 
 import (
 	"Network-go/network/bcast"
-	"sanntids/cmd/localElevator/structs"
+	"sanntids/cmd/structs"
 )
 
 func BroadcastState(dataChan <-chan structs.ElevatorDataWithID, port int) {

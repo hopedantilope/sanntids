@@ -2,9 +2,9 @@ package localOrders
 
 import (
 	"Driver-go/elevio"
-	"sanntids/cmd/localElevator/config"
+	"sanntids/cmd/config"
 	"sanntids/cmd/localElevator/elevator"
-	"sanntids/cmd/localElevator/structs"
+	"sanntids/cmd/structs"
 	"fmt"
 )
 

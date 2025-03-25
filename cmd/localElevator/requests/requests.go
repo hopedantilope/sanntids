@@ -4,7 +4,7 @@ package requests
 
 import (
     "sanntids/cmd/localElevator/elevator"
-    "sanntids/cmd/localElevator/config"
+    "sanntids/cmd/config"
 	"Driver-go/elevio"
 )
 

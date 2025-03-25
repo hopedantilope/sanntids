@@ -1,6 +1,6 @@
 package elevator
 import (
-	"sanntids/cmd/localElevator/config"
+	"sanntids/cmd/config"
 	"Driver-go/elevio"
 	"encoding/json"
 	"fmt"

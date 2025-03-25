@@ -3,7 +3,7 @@ package fsm
 import (
 	"Driver-go/elevio"
 	"fmt"
-	"sanntids/cmd/localElevator/config"
+	"sanntids/cmd/config"
 	"sanntids/cmd/localElevator/elevator"
 	"sanntids/cmd/localElevator/requests"
 	"sanntids/cmd/localElevator/timer"
