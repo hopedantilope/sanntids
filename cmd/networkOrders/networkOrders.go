@@ -81,7 +81,7 @@ func NetworkOrderManager(
 								if order.Status == structs.New && newOrder.Status == structs.Completed {
 									continue
 								}
-								if order.Status == structs.Assigned && newOrder.Status == structs.Completed {
+								if order.Status == structs.Completed && newOrder.Status == structs.Assigned {
 									continue
 								}
 								hallOrders[i].Status = newOrder.Status
