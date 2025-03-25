@@ -26,7 +26,6 @@ func NetworkOrderManager(
 	hallOrders := make([]structs.HallOrder, 0)
 	hallOrdersMap := make(map[string][]structs.HallOrder, 0)
 	ipMap := make(map[string]time.Time, 0)
-    var prevRequests [config.N_FLOORS][config.N_BUTTONS]bool
 
 	transmitTicker := time.NewTicker(config.TransmitTickerMs * time.Millisecond)
 	defer transmitTicker.Stop()
@@ -48,6 +47,10 @@ func NetworkOrderManager(
 				hallOrders = applyNewOrderBarrier(hallOrders, hallOrdersMap, ipMap)
 			}
 			sendNetworkData(localElevatorID, elevatorStates, hallOrders, outgoingDataChan, ipMap)
+
+			//Get the requests assigned to localID and send them to Elevator
+			myRequests := getMyRequests(hallOrders, elevatorStates, localElevatorID)
+			requestsToLocalChan <- myRequests
 
 		// Process incoming data from other elevators
 		case incomingData, ok := <-incomingDataChan:
@@ -104,13 +107,6 @@ func NetworkOrderManager(
 				}
 			}
 
-			//Get the requests assigned to localID and send them to Elevator
-			myRequests := getMyRequests(hallOrders, elevatorStates, localElevatorID)
-			if myRequests != prevRequests {
-				requestsToLocalChan <- myRequests
-				prevRequests = myRequests
-			}
-
 		// Update local elevator state
 		case localState, ok := <-localElevStateChan:
 			if !ok {
@@ -139,10 +135,7 @@ func NetworkOrderManager(
 			}
 
 		// Process completed requests
-		case completedReqs, ok := <-completedRequetsChan:
-			if !ok {
-				return
-			}
+		case completedReqs:= <-completedRequetsChan:
 
 			// Update order status for completed requests
 			for _, req := range completedReqs {
