@@ -39,7 +39,7 @@ func NetworkOrderManager(
 			currentTime := time.Now()
 			for ip, lastSeen := range ipMap {
 				// If we haven't received an update in 2 seconds, remove the IP
-				if currentTime.Sub(lastSeen) > config.ElevatorTimeoutMs*time.Second {
+				if currentTime.Sub(lastSeen) > config.ElevatorTimeoutMs*time.Millisecond {
 					delete(ipMap, ip)
 					delete(elevatorStates, ip)
 					delete(hallOrdersMap, ip)
@@ -93,7 +93,7 @@ func NetworkOrderManager(
 							if util.IsLowestIP(ipList, localElevatorID) {
 								switch newOrder.Status {
 								case structs.New:
-									if order.Status == structs.Completed && order.DelegatedID == incomingData.ElevatorID{
+									if order.Status == structs.Completed{
 										hallOrders[i].Status = newOrder.Status
 										hallOrders[i].DelegatedID = newOrder.DelegatedID
 									}
