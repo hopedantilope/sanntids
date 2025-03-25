@@ -3,8 +3,8 @@ package networkOrders
 import (
 	"Driver-go/elevio"
 	"fmt"
-	"sanntids/cmd/localElevator/config"
-	"sanntids/cmd/localElevator/structs"
+	"sanntids/cmd/config"
+	"sanntids/cmd/structs"
 	"sanntids/cmd/runHRA"
 	"sanntids/cmd/util"
 	"time"

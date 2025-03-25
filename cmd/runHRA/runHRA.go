@@ -5,8 +5,8 @@ import "os/exec"
 import "fmt"
 import "encoding/json"
 import "runtime"
-import "sanntids/cmd/localElevator/config"
-import "sanntids/cmd/localElevator/structs"
+import "sanntids/cmd/config"
+import "sanntids/cmd/structs"
 import "Driver-go/elevio"
 
 
