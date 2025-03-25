@@ -9,7 +9,7 @@ import (
 )
 
 // Use elevator package types
-type DirnBehaviourPair struct {
+type dirnBehaviourPair struct {
     MotorDirection      elevio.MotorDirection
     Behaviour elevator.ElevatorBehaviour
 }
@@ -49,41 +49,41 @@ func requestsHere(e elevator.Elevator) bool {
 }
 
 // Decide which direction to move next, based on current requests and direction
-func RequestsChooseDirection(e elevator.Elevator) DirnBehaviourPair {
+func RequestsChooseDirection(e elevator.Elevator) dirnBehaviourPair {
     switch e.MotorDirection {
     case elevio.MD_Up:
         if requestsAbove(e) {
-            return DirnBehaviourPair{elevio.MD_Up, elevator.EB_Moving}
+            return dirnBehaviourPair{elevio.MD_Up, elevator.EB_Moving}
         } else if requestsHere(e) {
-            return DirnBehaviourPair{elevio.MD_Down, elevator.EB_DoorOpen}
+            return dirnBehaviourPair{elevio.MD_Down, elevator.EB_DoorOpen}
         } else if requestsBelow(e) {
-            return DirnBehaviourPair{elevio.MD_Down, elevator.EB_Moving}
+            return dirnBehaviourPair{elevio.MD_Down, elevator.EB_Moving}
         } else {
-            return DirnBehaviourPair{elevio.MD_Stop, elevator.EB_Idle}
+            return dirnBehaviourPair{elevio.MD_Stop, elevator.EB_Idle}
         }
 
     case elevio.MD_Down:
         if requestsBelow(e) {
-            return DirnBehaviourPair{elevio.MD_Down, elevator.EB_Moving}
+            return dirnBehaviourPair{elevio.MD_Down, elevator.EB_Moving}
         } else if requestsHere(e) {
-            return DirnBehaviourPair{elevio.MD_Up, elevator.EB_DoorOpen}
+            return dirnBehaviourPair{elevio.MD_Up, elevator.EB_DoorOpen}
         } else if requestsAbove(e) {
-            return DirnBehaviourPair{elevio.MD_Up, elevator.EB_Moving}
+            return dirnBehaviourPair{elevio.MD_Up, elevator.EB_Moving}
         } else {
-            return DirnBehaviourPair{elevio.MD_Stop, elevator.EB_Idle}
+            return dirnBehaviourPair{elevio.MD_Stop, elevator.EB_Idle}
         }
 
     case elevio.MD_Stop:
         fallthrough
     default:
         if requestsHere(e) {
-            return DirnBehaviourPair{elevio.MD_Stop, elevator.EB_DoorOpen}
+            return dirnBehaviourPair{elevio.MD_Stop, elevator.EB_DoorOpen}
         } else if requestsAbove(e) {
-            return DirnBehaviourPair{elevio.MD_Up, elevator.EB_Moving}
+            return dirnBehaviourPair{elevio.MD_Up, elevator.EB_Moving}
         } else if requestsBelow(e) {
-            return DirnBehaviourPair{elevio.MD_Down, elevator.EB_Moving}
+            return dirnBehaviourPair{elevio.MD_Down, elevator.EB_Moving}
         } else {
-            return DirnBehaviourPair{elevio.MD_Stop, elevator.EB_Idle}
+            return dirnBehaviourPair{elevio.MD_Stop, elevator.EB_Idle}
         }
     }
 }
