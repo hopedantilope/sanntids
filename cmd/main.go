@@ -36,16 +36,16 @@ func main() {
 	elevio.Init(elevPort, numFloors)
 
 	// Create channels for driver inputs
-	drv_buttons := make(chan elevio.ButtonEvent)
-	drv_floors := make(chan int)
-	drv_obstr := make(chan bool)
-	drv_stop := make(chan bool)
+	drvButtons := make(chan elevio.ButtonEvent)
+	drvFloors := make(chan int)
+	drvObstr := make(chan bool)
+	drvStop := make(chan bool)
 
 	// Start polling inputs concurrently
-	go elevio.PollButtons(drv_buttons)
-	go elevio.PollFloorSensor(drv_floors)
-	go elevio.PollObstructionSwitch(drv_obstr)
-	go elevio.PollStopButton(drv_stop)
+	go elevio.PollButtons(drvButtons)
+	go elevio.PollFloorSensor(drvFloors)
+	go elevio.PollObstructionSwitch(drvObstr)
+	go elevio.PollStopButton(drvStop)
 
 	// FSM and state channels
 	elevatorCh := make(chan elevator.Elevator)
@@ -61,10 +61,10 @@ func main() {
 
 	
 
-	go fsm.Fsm(requestsToLocalChan, drv_floors, drv_obstr, drv_stop, elevatorCh)
+	go fsm.Fsm(requestsToLocalChan, drvFloors, drvObstr, drvStop, elevatorCh)
 
 	go localOrders.LocalStateManager(
-		drv_buttons,
+		drvButtons,
 		elevatorCh,
 		outgoingLocalOrdersChan,
 		outgoingLocalElevStateChan,

@@ -38,7 +38,7 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
         for floor := 0; floor < config.N_FLOORS; floor++ {
             for btnType := 0; btnType < config.N_BUTTONS; btnType++ {
                 if newRequests[floor][btnType] {
-                    if requests.Requests_shouldClearImmediately(*el, floor, elevio.ButtonType(btnType)) {
+                    if requests.RequestsShouldClearImmediately(*el, floor, elevio.ButtonType(btnType)) {
                         el.Cleared[floor][btnType] = true
                         timer.TimerStart(el.Config.DoorOpenDuration_s)
                     }
@@ -50,16 +50,16 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
 		// Do nothing
 
 	case elevator.EB_Idle:
-		pair := requests.Requests_chooseDirection(*el)
+		pair := requests.RequestsChooseDirection(*el)
 		el.MotorDirection = pair.MotorDirection
 		el.Behaviour = pair.Behaviour
 		switch pair.Behaviour {
 		case elevator.EB_DoorOpen:
 			elevio.SetDoorOpenLamp(true)
 			timer.TimerStart(el.Config.DoorOpenDuration_s)
-			cleared := requests.Requests_getClearedAtCurrentFloor(*el)
+			cleared := requests.RequestsGetClearedAtCurrentFloor(*el)
 			el.Cleared = cleared
-			*el = requests.Requests_clearAtCurrentFloor(*el)
+			*el = requests.RequestsClearAtCurrentFloor(*el)
 
 		case elevator.EB_Moving:
 			elevio.SetMotorDirection(el.MotorDirection)
@@ -84,9 +84,9 @@ func onFloorArrival(el *elevator.Elevator, newFloor int) {
 		if requests.RequestsShouldStop(*el) {
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			elevio.SetDoorOpenLamp(true)
-			cleared := requests.Requests_getClearedAtCurrentFloor(*el)
+			cleared := requests.RequestsGetClearedAtCurrentFloor(*el)
 			el.Cleared = cleared
-			*el = requests.Requests_clearAtCurrentFloor(*el)
+			*el = requests.RequestsClearAtCurrentFloor(*el)
 			timer.TimerStart(el.Config.DoorOpenDuration_s)
 			setAllCabLights(*el)
 			el.Behaviour = elevator.EB_DoorOpen
@@ -101,16 +101,16 @@ func onDoorTimeout(el *elevator.Elevator) {
 
 	switch el.Behaviour {
 	case elevator.EB_DoorOpen:
-		pair := requests.Requests_chooseDirection(*el)
+		pair := requests.RequestsChooseDirection(*el)
 		el.MotorDirection = pair.MotorDirection
 		el.Behaviour = pair.Behaviour
 
 		switch el.Behaviour {
 		case elevator.EB_DoorOpen:
 			timer.TimerStart(el.Config.DoorOpenDuration_s)
-			cleared := requests.Requests_getClearedAtCurrentFloor(*el)
+			cleared := requests.RequestsGetClearedAtCurrentFloor(*el)
 			el.Cleared = cleared
-			*el = requests.Requests_clearAtCurrentFloor(*el)
+			*el = requests.RequestsClearAtCurrentFloor(*el)
 			setAllCabLights(*el)
 
 		case elevator.EB_Moving, elevator.EB_Idle:
@@ -141,10 +141,10 @@ func onObstruction(el *elevator.Elevator, obstruction bool) {
 
 
 func Fsm(
-    drv_buttons chan [config.N_FLOORS][config.N_BUTTONS]bool,
-    drv_floors chan int,
-    drv_obstr chan bool,
-    drv_stop chan bool,
+    drvButtons chan [config.N_FLOORS][config.N_BUTTONS]bool,
+    drvFloors chan int,
+    drvObstr chan bool,
+    drvStop chan bool,
 	elevatorCh chan <- elevator.Elevator) {
 
     e := elevator.ElevatorInit()
@@ -153,17 +153,17 @@ func Fsm(
     setAllCabLights(e)
     elevio.SetFloorIndicator(0)
     elevio.SetDoorOpenLamp(false)
-    moveToFirstFloor(drv_floors)
+    moveToFirstFloor(drvFloors)
 
 
     for {
         select {
-        case newRequests := <-drv_buttons:
+        case newRequests := <-drvButtons:
             fmt.Println("Got some new requests")
 			onRequestsUpdate(&e, newRequests)
 			elevatorCh <- e
 
-        case floor := <-drv_floors:
+        case floor := <-drvFloors:
             fmt.Printf("Arrived at floor: %v \n", floor)
             onFloorArrival(&e, floor)
 			elevatorCh <- e
@@ -173,11 +173,11 @@ func Fsm(
             onDoorTimeout(&e)
 			elevatorCh <- e
 
-        case obstruction := <-drv_obstr:
+        case obstruction := <-drvObstr:
             onObstruction(&e, obstruction)
 			elevatorCh <- e
 
-        case <-drv_stop:
+        case <-drvStop:
             //Optional - if stop button causes a state change
         }
     }
