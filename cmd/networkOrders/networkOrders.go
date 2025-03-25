@@ -281,6 +281,7 @@ func assignOrders(data structs.ElevatorDataWithID) structs.ElevatorDataWithID {
     newData := runHRA.RunHRA(dataForHRA)
     // Merge the completed orders back into the HRA result.
     newData.HallOrders = append(newData.HallOrders, nonPendingOrders...)
+	newData.ElevatorState = data.ElevatorState
     return newData
 }
 

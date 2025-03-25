@@ -59,6 +59,7 @@ func LocalStateManager(
 			currentState.Behavior = elevator.Eb_toString(e.Behaviour)
 			currentState.Floor = e.Floor
 			currentState.Direction = elevator.Md_toString(e.MotorDirection)
+			currentState.Obstruction = e.Obstruction
 			// To make sure completed cab requests gets reset to false:
 			currentState.CabRequests = elevator.GetCabRequests(e.Requests)
 			//Sending completed requets to a channel
