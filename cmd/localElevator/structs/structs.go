@@ -16,7 +16,7 @@ const (
 
 // HallOrder structure for order management
 type HallOrder struct {
-	DelegatedID string
+	DelegatedID string   `json:"id"`
 	Status      OrderStatus
 	Floor       int
 	Dir         elevio.ButtonType
@@ -31,7 +31,7 @@ type HRAElevState struct {
 }
 
 type ElevatorDataWithID struct {
-	ElevatorID string
-	ElevatorState map[string]HRAElevState
+	ElevatorID string  `json:"eleid"`
+	ElevatorState map[string]HRAElevState `json:"eleState"`
 	HallOrders    []HallOrder
 }

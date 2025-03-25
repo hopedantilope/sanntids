@@ -52,53 +52,38 @@ func GetCabRequests(requests [config.N_FLOORS][config.N_BUTTONS]bool) []bool {
 }
 
 func saveCabRequests(cabOrders []bool) {
-    data, err := json.Marshal(cabOrders)
-    if err != nil {
-        fmt.Printf("Error marshalling cab requests: %v\n", err)
-    }
+	data, err := json.Marshal(cabOrders)
+	if err != nil {
+		fmt.Printf("Error marshalling cab requests: %v\n", err)
+		return
+	}
 
-    tempFile := cabRequestsFile + ".tmp"
-    
-    err = os.WriteFile(tempFile, data, 0644)
-    if err != nil {
-        fmt.Printf("Error writing to temp file: %v\n", err)
-    }
-
-    err = os.Rename(tempFile, cabRequestsFile)
-    if err != nil {
-        fmt.Printf("Error renaming temp file: %v\n", err)
-    }
+	err = os.WriteFile(cabRequestsFile, data, 0644)
+	if err != nil {
+		fmt.Printf("Error writing to cab requests file: %v\n", err)
+	}
 }
 
-// If the file doesn't exist or has an error, it returns a default cab requests slice
-func LoadCabRequests() []bool {
-    // Default cab requests - all false
-    cabRequests := make([]bool, config.N_FLOORS)
-    
-    // Try to load the file
-    data, err := os.ReadFile(cabRequestsFile)
-    if err != nil {
-        fmt.Printf("Could not read cab requests file: %v. Using default values.\n", err)
-        return cabRequests
-    }
+func loadCabRequests() []bool {
+	cabRequests := make([]bool, config.N_FLOORS)
 
-    // Parse the saved requests
-    err = json.Unmarshal(data, &cabRequests)
-    if err != nil {
-        fmt.Printf("Error parsing cab requests file: %v. Using default values.\n", err)
-        return cabRequests
-    }
+	data, err := os.ReadFile(cabRequestsFile)
+	if err != nil {
+		fmt.Printf("Could not read cab requests file: %v. Creating a new file with default values.\n", err)
+		saveCabRequests(cabRequests)
+		return cabRequests
+	}
 
-    // Validate the loaded cab requests
-    if len(cabRequests) != config.N_FLOORS {
-        fmt.Printf("Invalid cab requests length: %d (expected %d). Using default values.\n", 
-            len(cabRequests), config.N_FLOORS)
-        return cabRequests
-    }
+	err = json.Unmarshal(data, &cabRequests)
+	if err != nil || len(cabRequests) != config.N_FLOORS {
+		fmt.Printf("Invalid cab requests data, resetting to default. Error: %v\n", err)
+		cabRequests = make([]bool, config.N_FLOORS)
+		saveCabRequests(cabRequests)
+	}
 
-    fmt.Println("Successfully loaded cab requests from file")
-    return cabRequests
+	return cabRequests
 }
+
 
 type Elevator struct {
     Floor     int
@@ -116,27 +101,22 @@ type Elevator struct {
 
 
 func ElevatorInit() Elevator {
-    // Create a zero-initialized fixed-size 2D array for Requests
     var zeros [config.N_FLOORS][config.N_BUTTONS]bool
 
-    // Initialize elevator with default values
     e := Elevator{
         Floor:          0,
-        MotorDirection: elevio.MD_Stop,  // Default motor direction
+        MotorDirection: elevio.MD_Stop,
         Requests:       zeros,
         Cleared:        zeros,  
-        Behaviour:      EB_Idle,         // Default behaviour
+        Behaviour:      EB_Idle,
         Obstruction:    false,
     }
 
-    // Configure additional settings
-    e.Config.ClearRequestVariant = config.CV_All               // Default request clearing variant
+    e.Config.ClearRequestVariant = config.CV_All
     e.Config.DoorOpenDuration_s  = config.DoorOpenDuration_s  
 
-    // Attempt to load saved cab requests from file
-    savedCabRequests := LoadCabRequests()
+    savedCabRequests := loadCabRequests()
     
-    // Apply the loaded cab requests to the elevator
     for floor, isRequested := range savedCabRequests {
         e.Requests[floor][elevio.BT_Cab] = isRequested
     }

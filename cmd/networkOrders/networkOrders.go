@@ -80,7 +80,7 @@ func NetworkOrderManager(
 					for i, order := range hallOrders {
 						if order.Floor == newOrder.Floor && order.Dir == newOrder.Dir {
 							// Accept everthing the master says:
-							if util.IsLowestIP(ipList, incomingData.ElevatorID) {
+							if util.IsMaster(ipMap, incomingData.ElevatorID) {
 								//Send FSM
 								if order.Status == structs.New && newOrder.Status == structs.Completed {
 									continue
@@ -89,7 +89,7 @@ func NetworkOrderManager(
 								hallOrders[i].DelegatedID = newOrder.DelegatedID
 							}
 							// The master should only accept certain orders:
-							if util.IsLowestIP(ipList, localElevatorID) {
+							if util.IsMaster(ipMap, localElevatorID) {
 								switch newOrder.Status {
 								case structs.New:
 									if order.Status == structs.Completed{
@@ -97,9 +97,7 @@ func NetworkOrderManager(
 										hallOrders[i].DelegatedID = newOrder.DelegatedID
 									}
 								case structs.Assigned:
-									//Do nothing
 								case structs.Confirmed:
-									//Do nothing
 								case structs.Completed:
 									if order.Status != structs.New && order.DelegatedID == incomingData.ElevatorID{
 										hallOrders[i].Status = newOrder.Status
