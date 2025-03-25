@@ -125,13 +125,17 @@ func onDoorTimeout(el *elevator.Elevator) {
 
 func onObstruction(el *elevator.Elevator, obstruction bool) {
 	fmt.Printf("Obstuction: %v,behavior: %v \n", obstruction, el.Behaviour)
+	el.Obstruction = obstruction
 	switch {
-	case el.Behaviour == elevator.EB_DoorOpen && obstruction:
+	case obstruction:
 		fmt.Println("Stopping timer")
-		timer.TimerStop()
-	case el.Behaviour == elevator.EB_DoorOpen && !obstruction:
+		timer.TimerDisable()
+	case !obstruction:
 		fmt.Println("Starting timer")
-		timer.TimerStart(el.Config.DoorOpenDuration_s)
+		timer.TimerEnable()
+		if el.Behaviour == elevator.EB_DoorOpen {
+			timer.TimerStart(config.DoorOpenDuration_s)
+		}
 	}
 }
 

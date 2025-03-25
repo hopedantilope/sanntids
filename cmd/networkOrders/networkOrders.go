@@ -265,14 +265,23 @@ func assignOrders(data structs.ElevatorDataWithID) structs.ElevatorDataWithID {
         }
     }
 
+	newElevState := make(map[string]structs.HRAElevState)
+    for key, state := range data.ElevatorState {
+        if !state.Obstruction {
+            newElevState[key] = state
+        }
+    }
+
     // Create a new data object with only pending orders for runHRA.
     dataForHRA := data
+	dataForHRA.ElevatorState = newElevState
     dataForHRA.HallOrders = pendingOrders
 
     // Run HRA on the pending orders.
     newData := runHRA.RunHRA(dataForHRA)
     // Merge the completed orders back into the HRA result.
     newData.HallOrders = append(newData.HallOrders, nonPendingOrders...)
+	newData.ElevatorState = data.ElevatorState
     return newData
 }
 
