@@ -23,6 +23,7 @@ type HallOrder struct {
 }
 
 type HRAElevState struct {
+	Obstruction bool
     Behavior    string      `json:"behaviour"`
     Floor       int         `json:"floor"` 
     Direction   string      `json:"direction"`

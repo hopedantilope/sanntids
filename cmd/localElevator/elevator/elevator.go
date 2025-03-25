@@ -14,7 +14,6 @@ const (
     EB_Idle ElevatorBehaviour = iota
     EB_DoorOpen
     EB_Moving
-    EB_Obstruction
 )
 
 func Eb_toString(eb ElevatorBehaviour) string {
@@ -115,6 +114,7 @@ type Elevator struct {
     Requests  [config.N_FLOORS][config.N_BUTTONS]bool
     Cleared   [config.N_FLOORS][config.N_BUTTONS]bool
     Behaviour ElevatorBehaviour
+    Obstruction bool
 
     Config struct {
         ClearRequestVariant config.ClearRequestVariant
@@ -134,6 +134,7 @@ func ElevatorInit() Elevator {
         Requests:       zeros,
         Cleared:        zeros,  
         Behaviour:      EB_Idle,         // Default behaviour
+        Obstruction:    false,
     }
 
     // Configure additional settings
