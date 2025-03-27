@@ -89,6 +89,7 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
 func onFloorArrival(el *elevator.Elevator, newFloor int) {
 	// Update the last moving floor when we arrive at a new floor
 	lastMovingFloor = newFloor
+	movingStartTime = time.Now()
 
 	el.Floor = newFloor
 
