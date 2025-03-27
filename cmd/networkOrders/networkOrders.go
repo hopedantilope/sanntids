@@ -2,7 +2,6 @@ package networkOrders
 
 import (
 	"Driver-go/elevio"
-	"fmt"
 	"sanntids/cmd/config"
 	"sanntids/cmd/structs"
 	"sanntids/cmd/runHRA"
@@ -148,47 +147,15 @@ func sendNetworkData(
 	outChan chan<- structs.ElevatorDataWithID,
 	ipMap map[string]time.Time,
 ) {
-	fmt.Printf("Sending network data from elevator ID: %s\n", localID)
-
 	// Copy states map
 	statesCopy := make(map[string]structs.HRAElevState)
 	for id, state := range states {
 		statesCopy[id] = state
-		fmt.Printf("  State for elevator %s: Floor=%d, Direction=%s, Behavior=%s\n",
-			id, state.Floor, state.Direction, state.Behavior)
-
-		// Print cab requests
-		fmt.Print("    Cab Requests: [")
-		for floor, hasRequest := range state.CabRequests {
-			if hasRequest {
-				fmt.Printf("%d ", floor)
-			}
-		}
-		fmt.Println("]")
 	}
 
 	// Copy orders slice
 	ordersCopy := make([]structs.HallOrder, len(orders))
 	copy(ordersCopy, orders)
-
-	// Log hall orders
-	fmt.Printf("  Sending %d hall orders:\n", len(ordersCopy))
-	for i, order := range ordersCopy {
-		status := "Unknown"
-		switch order.Status {
-		case structs.New:
-			status = "New"
-		case structs.Assigned:
-			status = "Assigned"
-		case structs.Confirmed:
-			status = "Confirmed"
-		case structs.Completed:
-			status = "Completed"
-		}
-
-		fmt.Printf("    Order %d: Floor=%d, Direction=%v, Status=%s, DelegatedTo=%s\n",
-			i, order.Floor, order.Dir, status, order.DelegatedID)
-	}
 
 	networkData := structs.ElevatorDataWithID{
 		ElevatorID:    localID,
@@ -203,9 +170,7 @@ func sendNetworkData(
 
 	select {
 	case outChan <- networkData:
-		fmt.Println("  Successfully sent network data")
 	default:
-		fmt.Println("  Failed to send network data: channel full or not ready")
 	}
 }
 
