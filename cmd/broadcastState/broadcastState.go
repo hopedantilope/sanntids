@@ -10,7 +10,6 @@ func BroadcastState(dataChan <-chan structs.ElevatorDataWithID, port int) {
 	go bcast.Transmitter(port, broadcastChan)
 	for dataWithID := range dataChan {
 		broadcastChan <- dataWithID
-
 	}
 }
 

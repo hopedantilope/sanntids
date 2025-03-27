@@ -14,7 +14,7 @@ const (
 	Completed
 )
 
-// HallOrder structure for order management
+// Using `json:"1"`,`json:"2"`.. to save data when sending
 type HallOrder struct {
 	DelegatedID string   		  `json:"1"`
 	Status      OrderStatus       `json:"2"`

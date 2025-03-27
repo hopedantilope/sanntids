@@ -53,12 +53,9 @@ func NetworkOrderManager(
 			requestsToLocalChan <- myRequests
 
 		// Process incoming data from other elevators
-		case incomingData, ok := <-incomingDataChan:
-			if !ok {
-				return
-			}
+		case incomingData := <-incomingDataChan:
 
-            //Change this:
+
 			ipMap[incomingData.ElevatorID] = time.Now()
 			hallOrdersMap[incomingData.ElevatorID] = incomingData.HallOrders
 
@@ -72,45 +69,45 @@ func NetworkOrderManager(
 			for _, newOrder := range incomingData.HallOrders {
 				if !isDuplicateOrder(hallOrders, newOrder) {
 					hallOrders = append(hallOrders, newOrder)
-				} else {
-					// Update existing order if necessary
-					for i, order := range hallOrders {
-						if order.Floor == newOrder.Floor && order.Dir == newOrder.Dir {
-							// Handle messages from the master:
-							if util.IsMaster(ipMap, incomingData.ElevatorID) {
-								if order.Status == structs.New && newOrder.Status == structs.Completed {
-									continue
-								}
-								if order.Status == structs.Completed && newOrder.Status == structs.Assigned {
-									continue
-								}
+					continue
+				}
+				
+				// Update existing order if necessary
+				for i, order := range hallOrders {
+					if order.Floor != newOrder.Floor || order.Dir != newOrder.Dir {
+						continue
+					}
+					
+					// Handle messages from the master
+					if util.IsMaster(ipMap, incomingData.ElevatorID) {
+						if (order.Status == structs.New && newOrder.Status == structs.Completed) || 
+						(order.Status == structs.Completed && newOrder.Status == structs.Assigned) {
+							break
+						}
+						hallOrders[i].Status = newOrder.Status
+						hallOrders[i].DelegatedID = newOrder.DelegatedID
+					}
+					
+					// The master should only accept certain orders
+					if util.IsMaster(ipMap, localElevatorID) {
+						switch newOrder.Status {
+						case structs.New:
+							if order.Status == structs.Completed {
 								hallOrders[i].Status = newOrder.Status
 								hallOrders[i].DelegatedID = newOrder.DelegatedID
 							}
-							// The master should only accept certain orders:
-							if util.IsMaster(ipMap, localElevatorID) {
-								switch newOrder.Status {
-								case structs.New:
-									if order.Status == structs.Completed{
-										hallOrders[i].Status = newOrder.Status
-										hallOrders[i].DelegatedID = newOrder.DelegatedID
-									}
-								case structs.Assigned:
-
-								case structs.Confirmed:
-								case structs.Completed:
-									if order.Status != structs.New && order.DelegatedID == incomingData.ElevatorID{
-										hallOrders[i].Status = newOrder.Status
-										hallOrders[i].DelegatedID = newOrder.DelegatedID
-									}
-								}
+						case structs.Assigned, structs.Confirmed:
+							// Empty cases
+						case structs.Completed:
+							if order.Status != structs.New && order.DelegatedID == incomingData.ElevatorID {
+								hallOrders[i].Status = newOrder.Status
+								hallOrders[i].DelegatedID = newOrder.DelegatedID
 							}
-							break
 						}
 					}
+					break
 				}
 			}
-
 		// Update local elevator state
 		case localState, ok := <-localElevStateChan:
 			if !ok {

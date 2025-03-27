@@ -27,7 +27,6 @@ func TimerStart(duration float64) {
 	})
 }
 
-
 func TimerStop() {
 	if doorTimer != nil {
 		doorTimer.Stop()

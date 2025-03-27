@@ -1,18 +1,20 @@
 
 package runHRA
-
-import "os/exec"
-import "fmt"
-import "encoding/json"
-import "runtime"
-import "sanntids/cmd/config"
-import "sanntids/cmd/structs"
-import "Driver-go/elevio"
-
+import(
+	"os/exec"
+	"fmt"
+	"encoding/json"
+	"runtime"
+	"sanntids/cmd/config"
+	"sanntids/cmd/structs"
+	"Driver-go/elevio"
+	"path/filepath"
+	"os"
+)
 
 type HRAInput struct {
     HallRequests    [config.N_FLOORS][2]bool                   `json:"hallRequests"`
-    States          map[string]structs.HRAElevState                      `json:"states"`
+    States          map[string]structs.HRAElevState            `json:"states"`
 }
 
 func RunHRA(elevData structs.ElevatorDataWithID) structs.ElevatorDataWithID {
@@ -24,9 +26,7 @@ func RunHRA(elevData structs.ElevatorDataWithID) structs.ElevatorDataWithID {
 		case "windows": hraExecutable = "hall_request_assigner.exe"
 		default:        hraExecutable = "hall_request_assigner"
 	}
-	fmt.Println(hraExecutable)
 
-	//input := TransformToHRA(elevData, elevatorID)
 	input := HRAInput{
 		HallRequests: orders, 
 		States: states,
@@ -38,7 +38,16 @@ func RunHRA(elevData structs.ElevatorDataWithID) structs.ElevatorDataWithID {
 		return structs.ElevatorDataWithID{}
 	}
 	
-	ret, err := exec.Command("build/" + hraExecutable, "-i", string(jsonBytes)).CombinedOutput()
+	executablePath, err := os.Executable()
+	if err != nil {
+		fmt.Println("Error getting executable path:", err)
+		return structs.ElevatorDataWithID{}
+	}
+
+	execDir := filepath.Dir(executablePath)
+	execPath := filepath.Join(execDir, hraExecutable)
+	ret, err := exec.Command(execPath, "-i", string(jsonBytes)).CombinedOutput()
+
 	if err != nil {
 		fmt.Println("exec.Command error: ", err)
 		fmt.Println(string(ret))
