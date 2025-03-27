@@ -2,6 +2,7 @@ package networkOrders
 
 import (
 	"Driver-go/elevio"
+	"fmt"
 	"sanntids/cmd/config"
 	"sanntids/cmd/structs"
 	"sanntids/cmd/runHRA"
@@ -147,10 +148,19 @@ func sendNetworkData(
 	outChan chan<- structs.ElevatorDataWithID,
 	ipMap map[string]time.Time,
 ) {
+	fmt.Printf("Sending network data from elevator ID: %s\n", localID)
+
 	// Copy states map
 	statesCopy := make(map[string]structs.HRAElevState)
 	for id, state := range states {
 		statesCopy[id] = state
+
+		// Print cab requests
+		for floor, hasRequest := range state.CabRequests {
+			if hasRequest {
+				fmt.Printf("%d ", floor)
+			}
+		}
 	}
 
 	// Copy orders slice
