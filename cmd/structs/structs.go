@@ -24,6 +24,7 @@ type HallOrder struct {
 
 type HRAElevState struct {
 	Obstruction bool		`json:"5"`
+	Stop bool               `json:"6"`
     Behavior    string      `json:"behaviour"`
     Floor       int         `json:"floor"` 
     Direction   string      `json:"direction"`
@@ -31,7 +32,7 @@ type HRAElevState struct {
 }
 
 type ElevatorDataWithID struct {
-	ElevatorID string  					  `json:"6"`
-	ElevatorState map[string]HRAElevState `json:"7"`
-	HallOrders    []HallOrder  			  `json:"8"`
+	ElevatorID string  					  `json:"7"`
+	ElevatorState map[string]HRAElevState `json:"8"`
+	HallOrders    []HallOrder  			  `json:"9"`
 }

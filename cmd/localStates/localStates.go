@@ -52,6 +52,7 @@ func LocalStateManager(
 			currentState.Floor = e.Floor
 			currentState.Direction = motorDirectionToString(e.MotorDirection)
 			currentState.Obstruction = e.Obstruction
+			currentState.Stop = e.Stop
 			currentState.CabRequests = elevator.GetCabRequests(e.Requests)
 			completedRequests := getClearedHallRequests(e.Cleared)
 			if len(completedRequests) > 0 {

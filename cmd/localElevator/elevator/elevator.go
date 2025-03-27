@@ -66,6 +66,7 @@ type Elevator struct {
     Cleared   [config.N_FLOORS][config.N_BUTTONS]bool
     Behaviour ElevatorBehaviour
     Obstruction bool
+    Stop bool
 
     Config struct {
         ClearRequestVariant config.ClearRequestVariant

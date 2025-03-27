@@ -235,7 +235,7 @@ func assignOrders(data structs.ElevatorDataWithID) structs.ElevatorDataWithID {
 
 	newElevState := make(map[string]structs.HRAElevState)
     for key, state := range data.ElevatorState {
-        if !state.Obstruction {
+        if !(state.Obstruction || state.Stop){
             newElevState[key] = state
         }
     }

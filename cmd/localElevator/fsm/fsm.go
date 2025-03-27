@@ -6,7 +6,6 @@ import (
 	"sanntids/cmd/localElevator/elevator"
 	"sanntids/cmd/localElevator/requests"
 	"sanntids/cmd/localElevator/timer"
-	"fmt"
 	"time"
 )
 
@@ -80,7 +79,10 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
 	if el.Behaviour == elevator.EB_Moving && 
 		lastMovingFloor == el.Floor && 
 		time.Since(movingStartTime) > 2*time.Second {
-		fmt.Println("ELEVATOR NOT AVAILABLE: Motor power down or mechanical issue detected")
+		el.Stop = true
+
+	} else{
+		el.Stop = false
 	}
 }
 
