@@ -154,13 +154,6 @@ func sendNetworkData(
 	statesCopy := make(map[string]structs.HRAElevState)
 	for id, state := range states {
 		statesCopy[id] = state
-
-		// Print cab requests
-		for floor, hasRequest := range state.CabRequests {
-			if hasRequest {
-				fmt.Printf("%d ", floor)
-			}
-		}
 	}
 
 	// Copy orders slice
