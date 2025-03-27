@@ -148,8 +148,6 @@ func sendNetworkData(
 	outChan chan<- structs.ElevatorDataWithID,
 	ipMap map[string]time.Time,
 ) {
-	fmt.Printf("Sending network data from elevator ID: %s\n", localID)
-
 	// Copy states map
 	statesCopy := make(map[string]structs.HRAElevState)
 	for id, state := range states {

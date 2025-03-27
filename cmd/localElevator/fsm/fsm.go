@@ -78,7 +78,7 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
 	
 	if el.Behaviour == elevator.EB_Moving && 
 		lastMovingFloor == el.Floor && 
-		time.Since(movingStartTime) > 2*time.Second {
+		time.Since(movingStartTime) > 4*time.Second {
 		el.Stop = true
 
 	} else{
