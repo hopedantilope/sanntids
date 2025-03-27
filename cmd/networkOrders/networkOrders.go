@@ -54,7 +54,9 @@ func NetworkOrderManager(
 
 			ipMap[incomingData.ElevatorID] = time.Now()
 			hallOrdersMap[incomingData.ElevatorID] = incomingData.HallOrders
-
+			if len(incomingData.ElevatorState) == 1 {
+				hallOrders = incomingData.HallOrders
+			}
 			for id, state := range incomingData.ElevatorState {
 				if incomingData.ElevatorID == id {
 					elevatorStates[id] = state
