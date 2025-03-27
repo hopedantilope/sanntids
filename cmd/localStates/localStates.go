@@ -50,9 +50,9 @@ func LocalStateManager(
 			}
 
 		case e = <-elevatorCh:
-			currentState.Behavior = elevator.Eb_toString(e.Behaviour)
+			currentState.Behavior = elevatorBehaviourToString(e.Behaviour)
 			currentState.Floor = e.Floor
-			currentState.Direction = elevator.Md_toString(e.MotorDirection)
+			currentState.Direction = motorDirectionToString(e.MotorDirection)
 			currentState.Obstruction = e.Obstruction
 			currentState.CabRequests = elevator.GetCabRequests(e.Requests)
 			completedRequests := getClearedHallRequests(e.Cleared)
@@ -79,4 +79,31 @@ func getClearedHallRequests(cleared [config.N_FLOORS][config.N_BUTTONS]bool) []e
 		}
 	}
 	return requests
+}
+
+
+func elevatorBehaviourToString(eb elevator.ElevatorBehaviour) string {
+    switch eb {
+    case elevator.EB_Idle:
+        return "idle"
+    case elevator.EB_DoorOpen:
+        return "doorOpen"
+    case elevator.EB_Moving:
+        return "moving"
+    default:
+        return "unknown"
+    }
+}
+
+func motorDirectionToString(md elevio.MotorDirection) string {
+    switch md {
+    case elevio.MD_Up:
+        return "up"
+    case elevio.MD_Down:
+        return "down"
+    case elevio.MD_Stop:
+        return "stop"
+    default:
+        return "unknown"
+    }
 }

@@ -16,32 +16,6 @@ const (
     EB_Moving
 )
 
-func Eb_toString(eb ElevatorBehaviour) string {
-    switch eb {
-    case EB_Idle:
-        return "idle"
-    case EB_DoorOpen:
-        return "doorOpen"
-    case EB_Moving:
-        return "moving"
-    default:
-        return "unknown"
-    }
-}
-
-func Md_toString(md elevio.MotorDirection) string {
-    switch md {
-    case elevio.MD_Up:
-        return "up"
-    case elevio.MD_Down:
-        return "down"
-    case elevio.MD_Stop:
-        return "stop"
-    default:
-        return "unknown"
-    }
-}
-
 func GetCabRequests(requests [config.N_FLOORS][config.N_BUTTONS]bool) []bool {
     var cabOrders []bool
     for floor := 0; floor < config.N_FLOORS; floor++ {

@@ -66,7 +66,6 @@ func RunHRA(elevData structs.ElevatorDataWithID) structs.ElevatorDataWithID {
 		fmt.Printf("%6v :  %+v\n", k, v)
 	}
 	
-	// Transform the HRA output back to ElevatorDataWithID
 	return TransformFromHRA(assignedOrders, states, elevData.ElevatorID)
 }
 
