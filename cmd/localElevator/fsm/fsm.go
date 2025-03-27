@@ -6,7 +6,12 @@ import (
 	"sanntids/cmd/localElevator/elevator"
 	"sanntids/cmd/localElevator/requests"
 	"sanntids/cmd/localElevator/timer"
+	"fmt"
+	"time"
 )
+
+var lastMovingFloor int = -1
+var movingStartTime time.Time
 
 func setAllCabLights(e elevator.Elevator) {
 	for floor := 0; floor < config.N_FLOORS; floor++ {
@@ -44,7 +49,12 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
             }
         }
 	case elevator.EB_Moving:
+		if lastMovingFloor == -1 {
+			lastMovingFloor = el.Floor
+			movingStartTime = time.Now()
+		}
 	case elevator.EB_Idle:
+		lastMovingFloor = -1
 		pair := requests.RequestsChooseDirection(*el)
 		el.MotorDirection = pair.MotorDirection
 		el.Behaviour = pair.Behaviour
@@ -58,15 +68,25 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
 
 		case elevator.EB_Moving:
 			elevio.SetMotorDirection(el.MotorDirection)
+			lastMovingFloor = el.Floor
+			movingStartTime = time.Now()
 
 		case elevator.EB_Idle:
 		}
 	}
 
 	setAllCabLights(*el)
+	
+	if el.Behaviour == elevator.EB_Moving && 
+		lastMovingFloor == el.Floor && 
+		time.Since(movingStartTime) > 2*time.Second {
+		fmt.Println("ELEVATOR NOT AVAILABLE: Motor power down or mechanical issue detected")
+	}
 }
 
 func onFloorArrival(el *elevator.Elevator, newFloor int) {
+	// Update the last moving floor when we arrive at a new floor
+	lastMovingFloor = newFloor
 
 	el.Floor = newFloor
 
