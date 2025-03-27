@@ -1,5 +1,5 @@
-
 package runHRA
+
 import(
 	"os/exec"
 	"fmt"
@@ -12,13 +12,13 @@ import(
 	"os"
 )
 
-type HRAInput struct {
+type hraInput struct {
     HallRequests    [config.N_FLOORS][2]bool                   `json:"hallRequests"`
     States          map[string]structs.HRAElevState            `json:"states"`
 }
 
 func RunHRA(elevData structs.ElevatorDataWithID) structs.ElevatorDataWithID {
-	states, orders := TransformToHRA(elevData)
+	states, orders := transformToHRA(elevData)
 
 	hraExecutable := ""
 	switch runtime.GOOS {
@@ -27,7 +27,7 @@ func RunHRA(elevData structs.ElevatorDataWithID) structs.ElevatorDataWithID {
 		default:        hraExecutable = "hall_request_assigner"
 	}
 
-	input := HRAInput{
+	input := hraInput{
 		HallRequests: orders, 
 		States: states,
 	}
@@ -66,10 +66,10 @@ func RunHRA(elevData structs.ElevatorDataWithID) structs.ElevatorDataWithID {
 		fmt.Printf("%6v :  %+v\n", k, v)
 	}
 	
-	return TransformFromHRA(assignedOrders, states, elevData.ElevatorID)
+	return transformFromHRA(assignedOrders, states, elevData.ElevatorID)
 }
 
-func TransformFromHRA(assignedOrders map[string][config.N_FLOORS][2]bool, states map[string]structs.HRAElevState, elevatorID string) structs.ElevatorDataWithID {
+func transformFromHRA(assignedOrders map[string][config.N_FLOORS][2]bool, states map[string]structs.HRAElevState, elevatorID string) structs.ElevatorDataWithID {
 	var transformedOrder structs.ElevatorDataWithID
 	var hallOrders []structs.HallOrder
 	for id, arr := range assignedOrders {
@@ -105,7 +105,7 @@ func TransformFromHRA(assignedOrders map[string][config.N_FLOORS][2]bool, states
 	return transformedOrder
 }
 
-func TransformToHRA(elevData structs.ElevatorDataWithID) (map[string]structs.HRAElevState, [config.N_FLOORS][2]bool) {
+func transformToHRA(elevData structs.ElevatorDataWithID) (map[string]structs.HRAElevState, [config.N_FLOORS][2]bool) {
 	hallrequests := [config.N_FLOORS][2]bool{}
 
 	for _,order := range elevData.HallOrders{
