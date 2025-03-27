@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func IsLowestIP(ipList []string, singleIP string) bool {
+func isLowestIP(ipList []string, singleIP string) bool {
 	parsedSingleIP := net.ParseIP(singleIP).To4()
 	if parsedSingleIP == nil {
 		return false
@@ -17,7 +17,6 @@ func IsLowestIP(ipList []string, singleIP string) bool {
 			continue
 		}
 		
-		// Skip if it's the same IP
 		if ip == singleIP {
 			continue
 		}
@@ -31,11 +30,8 @@ func IsLowestIP(ipList []string, singleIP string) bool {
 			}
 		}
 	}
-
 	return true
 }
-
-
 
 func IsMaster(ipMap map[string]time.Time, singleIP string) bool {
 
@@ -44,5 +40,5 @@ func IsMaster(ipMap map[string]time.Time, singleIP string) bool {
 		ipList = append(ipList, nodeID)
 	}
 
-	return IsLowestIP(ipList, singleIP)
+	return isLowestIP(ipList, singleIP)
 }

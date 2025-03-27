@@ -16,14 +16,12 @@ import (
 
 func main() {
 	// Parse command-line arguments
-	port := flag.String("port", "15657", "Port number for elevator simulator")
+	port := flag.String("port", "15657", "Port number for elevator")
 	elevatorID := flag.String("id", "", "Elevator ID (defaults to local IP if not specified)")
 	broadcastPortFlag := flag.Int("broadcast", 30003, "Port for broadcasting state")
-	numFloorsFlag := flag.Int("floors", config.N_FLOORS, "Number of floors")
 	flag.Parse()
 
-	// Configure the simulator
-	numFloors := *numFloorsFlag
+	numFloors := config.N_FLOORS
 	elevPort := fmt.Sprintf("localhost:%s", *port)
 
 	// if not set use ip adress

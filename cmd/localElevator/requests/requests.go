@@ -191,5 +191,3 @@ func RequestsGetClearedAtCurrentFloor(e elevator.Elevator) [config.N_FLOORS][con
 	}
 	return cleared
 }
-
-

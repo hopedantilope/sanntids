@@ -38,7 +38,7 @@ To run the main elevator program:
 ./build/main --port=<port> --id=<elevator-id> --broadcast=<broadcast-port>
 ```
 
-You can also run multiple elevators using the test script:
+You can also run multiple elevators using the test script wich will create 3 simulated elevators:
 ```bash
 ./test.sh
 ```

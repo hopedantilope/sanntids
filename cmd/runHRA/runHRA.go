@@ -61,11 +61,6 @@ func RunHRA(elevData structs.ElevatorDataWithID) structs.ElevatorDataWithID {
 		return structs.ElevatorDataWithID{}
 	}
 	
-	fmt.Printf("output: \n")
-	for k, v := range assignedOrders {
-		fmt.Printf("%6v :  %+v\n", k, v)
-	}
-	
 	return transformFromHRA(assignedOrders, states, elevData.ElevatorID)
 }
 

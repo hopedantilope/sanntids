@@ -5,7 +5,6 @@ import (
 	"sanntids/cmd/config"
 	"sanntids/cmd/localElevator/elevator"
 	"sanntids/cmd/structs"
-	"fmt"
 )
 
 func LocalStateManager(
@@ -45,7 +44,6 @@ func LocalStateManager(
 					Floor:       request.Floor,
 					Dir:         request.Button,
 				}
-				fmt.Println("Sending new hall order:", newOrder)
 				outgoingOrdersChan <- newOrder
 			}
 
@@ -57,10 +55,8 @@ func LocalStateManager(
 			currentState.CabRequests = elevator.GetCabRequests(e.Requests)
 			completedRequests := getClearedHallRequests(e.Cleared)
 			if len(completedRequests) > 0 {
-				fmt.Println("Sending completed hall requests:", completedRequests)
 				completedRequetsChan <- completedRequests
 			}
-			fmt.Println("Sending updated elevator state (elevator update):", currentState)
 			outgoingElevStateChan <- currentState
 		}
 	}

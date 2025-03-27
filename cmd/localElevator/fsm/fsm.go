@@ -2,7 +2,6 @@ package fsm
 
 import (
 	"Driver-go/elevio"
-	"fmt"
 	"sanntids/cmd/config"
 	"sanntids/cmd/localElevator/elevator"
 	"sanntids/cmd/localElevator/requests"
@@ -20,14 +19,12 @@ func moveToFirstFloor(floor <-chan int) {
 		elevio.SetMotorDirection(elevio.MD_Down)
 
 		currentFloor := <-floor
-		fmt.Printf("moveToFirstFloor: got floor = %d\n", currentFloor)
 		if currentFloor == 0 {
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			break
 		}
 	}
 }
-
 
 func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][config.N_BUTTONS]bool) {
 	el.Requests = newRequests
@@ -46,10 +43,7 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
                 }
             }
         }
-
 	case elevator.EB_Moving:
-		// Do nothing
-
 	case elevator.EB_Idle:
 		pair := requests.RequestsChooseDirection(*el)
 		el.MotorDirection = pair.MotorDirection
@@ -66,13 +60,11 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
 			elevio.SetMotorDirection(el.MotorDirection)
 
 		case elevator.EB_Idle:
-			// Do nothing
 		}
 	}
 
 	setAllCabLights(*el)
 }
-
 
 func onFloorArrival(el *elevator.Elevator, newFloor int) {
 
@@ -93,7 +85,6 @@ func onFloorArrival(el *elevator.Elevator, newFloor int) {
 			el.Behaviour = elevator.EB_DoorOpen
 		}
 	default:
-		// Do nothing for other states
 	}
 
 }
@@ -120,26 +111,21 @@ func onDoorTimeout(el *elevator.Elevator) {
 		}
 
 	default:
-		// Do nothing for other states
 	}
 }
 
 func onObstruction(el *elevator.Elevator, obstruction bool) {
-	fmt.Printf("Obstuction: %v,behavior: %v \n", obstruction, el.Behaviour)
 	el.Obstruction = obstruction
 	switch {
 	case obstruction:
-		fmt.Println("Stopping timer")
 		timer.TimerDisable()
 	case !obstruction:
-		fmt.Println("Starting timer")
 		timer.TimerEnable()
 		if el.Behaviour == elevator.EB_DoorOpen {
 			timer.TimerStart(config.DoorOpenDuration_s)
 		}
 	}
 }
-
 
 func Fsm(
     drvButtons chan [config.N_FLOORS][config.N_BUTTONS]bool,
@@ -160,17 +146,14 @@ func Fsm(
     for {
         select {
         case newRequests := <-drvButtons:
-            fmt.Println("Got some new requests")
 			onRequestsUpdate(&e, newRequests)
 			elevatorCh <- e
 
         case floor := <-drvFloors:
-            fmt.Printf("Arrived at floor: %v \n", floor)
             onFloorArrival(&e, floor)
 			elevatorCh <- e
 
         case <-timer.TimeoutChan():
-            fmt.Println("Timeout")
             onDoorTimeout(&e)
 			elevatorCh <- e
 
