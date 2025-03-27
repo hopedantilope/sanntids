@@ -132,7 +132,6 @@ func NetworkOrderManager(
 	}
 }
 
-// Two orders are considered duplicates if they have the same floor and direction
 func isDuplicateOrder(orders []structs.HallOrder, newOrder structs.HallOrder) bool {
 	for _, order := range orders {
 		if order.Floor == newOrder.Floor && order.Dir == newOrder.Dir {
@@ -210,7 +209,6 @@ func sendNetworkData(
 	}
 }
 
-// updateOrderStatus updates the status of a hall order in the order list
 func updateOrderStatus(orders []structs.HallOrder, floor int, dir int, newStatus structs.OrderStatus) []structs.HallOrder {
 	for i, order := range orders {
 		if order.Floor == floor && int(order.Dir) == dir {
@@ -224,9 +222,9 @@ func updateOrderStatus(orders []structs.HallOrder, floor int, dir int, newStatus
 // assignOrders checks if the local elevator is the master and
 // assigns orders accordingly using the runHRA package.
 func assignOrders(data structs.ElevatorDataWithID) structs.ElevatorDataWithID {
-    // Split orders into pending and completed.
     var pendingOrders []structs.HallOrder
     var nonPendingOrders []structs.HallOrder
+
     for _, order := range data.HallOrders {
         if order.Status == structs.Completed || order.Status == structs.New{
             nonPendingOrders = append(nonPendingOrders, order)
@@ -242,16 +240,13 @@ func assignOrders(data structs.ElevatorDataWithID) structs.ElevatorDataWithID {
         }
     }
 
-    // Create a new data object with only pending orders for runHRA.
     dataForHRA := data
 	dataForHRA.ElevatorState = newElevState
     dataForHRA.HallOrders = pendingOrders
-
-    // Run HRA on the pending orders.
     newData := runHRA.RunHRA(dataForHRA)
-    // Merge the completed orders back into the HRA result.
     newData.HallOrders = append(newData.HallOrders, nonPendingOrders...)
 	newData.ElevatorState = data.ElevatorState
+
     return newData
 }
 
@@ -259,6 +254,7 @@ func assignOrders(data structs.ElevatorDataWithID) structs.ElevatorDataWithID {
 // orderKnownByAll returns true if every active node
 // has an order with the same Floor and Dir that is still marked as New (or already Confirmed)
 func orderKnownByAll(order structs.HallOrder, hallOrdersMap map[string][]structs.HallOrder, ipList []string) bool {
+
     for _, nodeID := range ipList {
         orders, exists := hallOrdersMap[nodeID]
         if !exists {
@@ -280,23 +276,21 @@ func orderKnownByAll(order structs.HallOrder, hallOrdersMap map[string][]structs
 }
 
 func applyNewOrderBarrier(orders []structs.HallOrder, hallOrdersMap map[string][]structs.HallOrder, ipMap map[string]time.Time) []structs.HallOrder {
-    // Build a list of active node IDs from ipMap
     ipList := make([]string, 0, len(ipMap))
+
     for nodeID := range ipMap {
         ipList = append(ipList, nodeID)
     }
-    // Check each new order
+
     for i, order := range orders {
         if order.Status == structs.New {
             if orderKnownByAll(order, hallOrdersMap, ipList) {
-                // All nodes agree the order exists – barrier passed.
                 orders[i].Status = structs.Confirmed
             }
         }
     }
     return orders
 }
-
 
 func getMyRequests(hallOrders []structs.HallOrder, elevatorStates map[string]structs.HRAElevState, myID string) [config.N_FLOORS][config.N_BUTTONS]bool {
     var orders [config.N_FLOORS][config.N_BUTTONS]bool
