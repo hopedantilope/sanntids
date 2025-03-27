@@ -42,7 +42,7 @@ You can also run multiple elevators using the test script wich will create 3 sim
 ```bash
 ./test.sh
 ```
-
+sudo iptables -A OUTPUT -p udp -d 255.255.255.255 -m statistic --mode random --probability 0.4 -j DROP
 ## System Architecture
 
 The system is designed as a distributed network of elevator controllers with no central server. Each elevator operates independently but shares information with others to optimize request handling.
