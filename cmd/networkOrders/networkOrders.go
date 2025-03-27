@@ -2,7 +2,6 @@ package networkOrders
 
 import (
 	"Driver-go/elevio"
-	"fmt"
 	"sanntids/cmd/config"
 	"sanntids/cmd/structs"
 	"sanntids/cmd/runHRA"
