@@ -21,7 +21,6 @@ func NetworkOrderManager(
 	outgoingDataChan chan<- structs.ElevatorDataWithID,
     requestsToLocalChan chan<- [config.N_FLOORS][config.N_BUTTONS]bool,
 ) {
-	// Initialize data stores
 	elevatorStates := make(map[string]structs.HRAElevState)
 	hallOrders := make([]structs.HallOrder, 0)
 	hallOrdersMap := make(map[string][]structs.HallOrder, 0)
@@ -32,11 +31,10 @@ func NetworkOrderManager(
 
 	for {
 		select {
-		// Handle periodic data transmission
 		case <-transmitTicker.C:
 			currentTime := time.Now()
 			for ip, lastSeen := range ipMap {
-				// If we haven't received an update in 2 seconds, remove the IP
+
 				if currentTime.Sub(lastSeen) > config.ElevatorTimeoutMs*time.Millisecond {
 					delete(ipMap, ip)
 					delete(elevatorStates, ip)
@@ -46,39 +44,34 @@ func NetworkOrderManager(
 			if util.IsMaster(ipMap, localElevatorID) {
 				hallOrders = applyNewOrderBarrier(hallOrders, hallOrdersMap, ipMap)
 			}
+
 			sendNetworkData(localElevatorID, elevatorStates, hallOrders, outgoingDataChan, ipMap)
 
 			//Get the requests assigned to localID and send them to Elevator
 			myRequests := getMyRequests(hallOrders, elevatorStates, localElevatorID)
 			requestsToLocalChan <- myRequests
 
-		// Process incoming data from other elevators
 		case incomingData := <-incomingDataChan:
-
 
 			ipMap[incomingData.ElevatorID] = time.Now()
 			hallOrdersMap[incomingData.ElevatorID] = incomingData.HallOrders
 
-			// Update state map with received data
 			for id, state := range incomingData.ElevatorState {
 				if incomingData.ElevatorID == id {
 					elevatorStates[id] = state
 				}
 			}
-			// Process incoming hall orders
 			for _, newOrder := range incomingData.HallOrders {
 				if !isDuplicateOrder(hallOrders, newOrder) {
 					hallOrders = append(hallOrders, newOrder)
 					continue
 				}
 				
-				// Update existing order if necessary
 				for i, order := range hallOrders {
 					if order.Floor != newOrder.Floor || order.Dir != newOrder.Dir {
 						continue
 					}
 					
-					// Handle messages from the master
 					if util.IsMaster(ipMap, incomingData.ElevatorID) {
 						if (order.Status == structs.New && newOrder.Status == structs.Completed) || 
 						(order.Status == structs.Completed && newOrder.Status == structs.Assigned) {
@@ -96,8 +89,8 @@ func NetworkOrderManager(
 								hallOrders[i].Status = newOrder.Status
 								hallOrders[i].DelegatedID = newOrder.DelegatedID
 							}
-						case structs.Assigned, structs.Confirmed:
-							// Empty cases
+						case structs.Assigned:
+						case structs.Confirmed:
 						case structs.Completed:
 							if order.Status != structs.New && order.DelegatedID == incomingData.ElevatorID {
 								hallOrders[i].Status = newOrder.Status
@@ -108,7 +101,6 @@ func NetworkOrderManager(
 					break
 				}
 			}
-		// Update local elevator state
 		case localState, ok := <-localElevStateChan:
 			if !ok {
 				return
@@ -116,7 +108,6 @@ func NetworkOrderManager(
 
 			elevatorStates[localElevatorID] = localState
 
-		// Process local orders
 		case localOrder, ok := <-localOrdersChan:
 			if !ok {
 				return
@@ -125,7 +116,6 @@ func NetworkOrderManager(
 			if !isDuplicateOrder(hallOrders, localOrder) {
 				hallOrders = append(hallOrders, localOrder)
 			} else {
-				// Update the existing order status if it already exists
 				for i := range hallOrders {
 					if hallOrders[i].Floor == localOrder.Floor && hallOrders[i].Dir == localOrder.Dir {
 						hallOrders[i].Status = localOrder.Status
@@ -134,13 +124,9 @@ func NetworkOrderManager(
 					}
 				}
 			}
-
-		// Process completed requests
 		case completedReqs:= <-completedRequetsChan:
-
-			// Update order status for completed requests
 			for _, req := range completedReqs {
-				hallOrders = UpdateOrderStatus(hallOrders, req.Floor, int(req.Button), structs.Completed)
+				hallOrders = updateOrderStatus(hallOrders, req.Floor, int(req.Button), structs.Completed)
 			}
 		}
 	}
@@ -224,8 +210,8 @@ func sendNetworkData(
 	}
 }
 
-// UpdateOrderStatus updates the status of a hall order in the order list
-func UpdateOrderStatus(orders []structs.HallOrder, floor int, dir int, newStatus structs.OrderStatus) []structs.HallOrder {
+// updateOrderStatus updates the status of a hall order in the order list
+func updateOrderStatus(orders []structs.HallOrder, floor int, dir int, newStatus structs.OrderStatus) []structs.HallOrder {
 	for i, order := range orders {
 		if order.Floor == floor && int(order.Dir) == dir {
 			orders[i].Status = newStatus
