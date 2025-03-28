@@ -54,9 +54,6 @@ func NetworkOrderManager(
 
 			ipMap[incomingData.ElevatorID] = time.Now()
 			hallOrdersMap[incomingData.ElevatorID] = incomingData.HallOrders
-			if len(incomingData.ElevatorState) == 1 {
-				hallOrders = incomingData.HallOrders
-			}
 			for id, state := range incomingData.ElevatorState {
 				if incomingData.ElevatorID == id {
 					elevatorStates[id] = state
@@ -201,10 +198,13 @@ func assignOrders(data structs.ElevatorDataWithID) structs.ElevatorDataWithID {
     }
 
 	newElevState := make(map[string]structs.HRAElevState)
+	test := make(map[string]structs.HRAElevState)
     for key, state := range data.ElevatorState {
         if !(state.Obstruction || state.Stop){
             newElevState[key] = state
-        }
+        } else{
+			test[key] = state
+		}
     }
 
     dataForHRA := data
@@ -213,7 +213,13 @@ func assignOrders(data structs.ElevatorDataWithID) structs.ElevatorDataWithID {
     newData := runHRA.RunHRA(dataForHRA)
     newData.HallOrders = append(newData.HallOrders, nonPendingOrders...)
 	newData.ElevatorState = data.ElevatorState
-
+	for key, state := range data.ElevatorState {
+		if !(state.Obstruction || state.Stop) {
+			newElevState[key] = state
+		} else {
+			test[key] = state
+		}
+	}
     return newData
 }
 
