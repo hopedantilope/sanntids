@@ -34,6 +34,7 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
 	el.Requests = newRequests
 	switch el.Behaviour {
 	case elevator.EB_DoorOpen:
+		movingStartTime = time.Now()
 		var zeros [config.N_FLOORS][config.N_BUTTONS]bool
 		el.Cleared = zeros
         for floor := 0; floor < config.N_FLOORS; floor++ {
@@ -54,6 +55,7 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
 		}
 	case elevator.EB_Idle:
 		lastMovingFloor = -1
+		movingStartTime = time.Now()
 		pair := requests.RequestsChooseDirection(*el)
 		el.MotorDirection = pair.MotorDirection
 		el.Behaviour = pair.Behaviour
@@ -67,8 +69,6 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
 
 		case elevator.EB_Moving:
 			elevio.SetMotorDirection(el.MotorDirection)
-			lastMovingFloor = el.Floor
-			movingStartTime = time.Now()
 
 		case elevator.EB_Idle:
 		}
@@ -78,9 +78,8 @@ func onRequestsUpdate(el *elevator.Elevator, newRequests [config.N_FLOORS][confi
 	
 	if el.Behaviour == elevator.EB_Moving && 
 		lastMovingFloor == el.Floor && 
-		time.Since(movingStartTime) > 5*time.Second {
+		time.Since(movingStartTime) >4*time.Second {
 		el.Stop = true
-
 	} else{
 		el.Stop = false
 	}

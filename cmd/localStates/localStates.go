@@ -5,7 +5,6 @@ import (
 	"sanntids/cmd/config"
 	"sanntids/cmd/localElevator/elevator"
 	"sanntids/cmd/structs"
-	"fmt"
 )
 
 func LocalStateManager(
@@ -54,9 +53,7 @@ func LocalStateManager(
 			currentState.Direction = motorDirectionToString(e.MotorDirection)
 			currentState.Obstruction = e.Obstruction
 			currentState.Stop = e.Stop
-			fmt.Println("before", currentState.CabRequests)
 			currentState.CabRequests = elevator.GetCabRequests(e.Requests)
-			fmt.Println("after", currentState.CabRequests)
 			completedRequests := getClearedHallRequests(e.Cleared)
 			if len(completedRequests) > 0 {
 				completedRequetsChan <- completedRequests

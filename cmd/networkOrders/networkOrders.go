@@ -49,7 +49,6 @@ func NetworkOrderManager(
 			//Get the requests assigned to localID and send them to Elevator
 			myRequests := getMyRequests(hallOrders, elevatorStates, localElevatorID)
 			requestsToLocalChan <- myRequests
-
 		case incomingData := <-incomingDataChan:
 
 			ipMap[incomingData.ElevatorID] = time.Now()
@@ -269,22 +268,31 @@ func applyNewOrderBarrier(orders []structs.HallOrder, hallOrdersMap map[string][
 
 func getMyRequests(hallOrders []structs.HallOrder, elevatorStates map[string]structs.HRAElevState, myID string) [config.N_FLOORS][config.N_BUTTONS]bool {
     var orders [config.N_FLOORS][config.N_BUTTONS]bool
-
-    for _, order := range hallOrders {
-        if order.DelegatedID == myID && order.Status == structs.Assigned {
-            orders[order.Floor][order.Dir] = true
+    
+    // If only one elevator is active, take all hall orders
+    if len(elevatorStates) == 1 {
+        for _, order := range hallOrders {
+            if order.Status == structs.Assigned {  // Only take assigned orders
+                orders[order.Floor][order.Dir] = true
+            }
         }
     }
 
-    if state, ok := elevatorStates[myID]; ok {
+	for _, order := range hallOrders {
+		if order.DelegatedID == myID && order.Status == structs.Assigned {
+			orders[order.Floor][order.Dir] = true
+		}
+	}
+
+	if state, ok := elevatorStates[myID]; ok {
 		for floorIndex := 0; floorIndex < len(state.CabRequests); floorIndex++ {
 			if state.CabRequests[floorIndex] {
 				orders[floorIndex][elevio.BT_Cab] = true
 			}
 		}
-    }
+	}
 
-    return orders
+	return orders
 }
 
 
