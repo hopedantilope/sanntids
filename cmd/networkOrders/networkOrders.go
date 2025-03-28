@@ -210,9 +210,11 @@ func assignOrders(data structs.ElevatorDataWithID) structs.ElevatorDataWithID {
     dataForHRA := data
 	dataForHRA.ElevatorState = newElevState
     dataForHRA.HallOrders = pendingOrders
+
     newData := runHRA.RunHRA(dataForHRA)
     newData.HallOrders = append(newData.HallOrders, nonPendingOrders...)
 	newData.ElevatorState = data.ElevatorState
+
 	for key, state := range data.ElevatorState {
 		if !(state.Obstruction || state.Stop) {
 			newElevState[key] = state
