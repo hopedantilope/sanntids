@@ -70,8 +70,15 @@ func NetworkOrderManager(
 					}
 					
 					if util.IsMaster(ipMap, incomingData.ElevatorID) {
-						if (order.Status == structs.New && newOrder.Status == structs.Completed) || 
-						(order.Status == structs.Completed && newOrder.Status == structs.Assigned) {
+						if order.Status == structs.New && newOrder.Status == structs.Completed {
+							break
+						}
+
+						if order.Status == structs.Completed && newOrder.Status == structs.Assigned {
+							break
+						}
+
+						if order.Status == structs.Confirmed && newOrder.Status == structs.Completed {
 							break
 						}
 						hallOrders[i].Status = newOrder.Status
