@@ -145,13 +145,11 @@ func sendNetworkData(
 	outChan chan<- structs.ElevatorDataWithID,
 	ipMap map[string]time.Time,
 ) {
-	// Copy states map
 	statesCopy := make(map[string]structs.HRAElevState)
 	for id, state := range states {
 		statesCopy[id] = state
 	}
 
-	// Copy orders slice
 	ordersCopy := make([]structs.HallOrder, len(orders))
 	copy(ordersCopy, orders)
 
@@ -272,7 +270,7 @@ func getMyRequests(hallOrders []structs.HallOrder, elevatorStates map[string]str
     // If only one elevator is active, take all hall orders
     if len(elevatorStates) == 1 {
         for _, order := range hallOrders {
-            if order.Status == structs.Assigned {  // Only take assigned orders
+            if order.Status == structs.Assigned {
                 orders[order.Floor][order.Dir] = true
             }
         }
