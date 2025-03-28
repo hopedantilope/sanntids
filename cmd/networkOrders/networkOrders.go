@@ -95,6 +95,10 @@ func NetworkOrderManager(
 							}
 						case structs.Assigned:
 						case structs.Confirmed:
+							if order.Status == structs.Completed {
+								hallOrders[i].Status = newOrder.Status
+								hallOrders[i].DelegatedID = newOrder.DelegatedID
+							}
 						case structs.Completed:
 							if (order.Status != structs.New && order.Status != structs.Confirmed) && order.DelegatedID == incomingData.ElevatorID {
 								hallOrders[i].Status = newOrder.Status
